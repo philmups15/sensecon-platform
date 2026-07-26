@@ -1,0 +1,28 @@
+body {
+  margin: 0;
+  font-family: -apple-system, 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: #F4F6F8;
+  color: #141719;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D2D8DC;
+  border-radius: 8px;
+}
+
+a {
+  color: #2563EB;
+}
+
+a:hover {
+  color: #1E4FC4;
+}
+
+button {
+  font-family: inherit;
+}
