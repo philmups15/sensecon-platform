@@ -120,6 +120,10 @@ export const deleteReport = (id) => request(`/api/reports/${id}`, { method: 'DEL
 
 // ---- Users ----
 export const getUsers = () => request('/api/users');
+export const getCurrentUser = () => request('/api/users/me');
+export const updateProfile = (displayName) => request('/api/users/me', { method: 'PUT', body: { displayName } });
+export const changePassword = (currentPassword, newPassword) =>
+  request('/api/users/me/password', { method: 'PUT', body: { currentPassword, newPassword } });
 
 // ---- Audit log ----
 export const getAuditLog = () => request('/api/auditlog');

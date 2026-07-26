@@ -37,11 +37,13 @@ export default function App() {
   const [screen, setScreen] = useState(isAuthenticated() ? 'dashboard' : 'login');
   const [tenantOpen, setTenantOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const go = (next) => {
     setScreen(next);
     setTenantOpen(false);
     setNotifOpen(false);
+    setProfileOpen(false);
   };
 
   const handleLogout = () => {
@@ -68,8 +70,11 @@ export default function App() {
           screen={screen}
           tenantOpen={tenantOpen}
           notifOpen={notifOpen}
-          onToggleTenant={() => { setTenantOpen((v) => !v); setNotifOpen(false); }}
-          onToggleNotif={() => { setNotifOpen((v) => !v); setTenantOpen(false); }}
+          profileOpen={profileOpen}
+          onToggleTenant={() => { setTenantOpen((v) => !v); setNotifOpen(false); setProfileOpen(false); }}
+          onToggleNotif={() => { setNotifOpen((v) => !v); setTenantOpen(false); setProfileOpen(false); }}
+          onToggleProfile={() => { setProfileOpen((v) => !v); setTenantOpen(false); setNotifOpen(false); }}
+          onLogout={handleLogout}
         />
 
         <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px', background: '#F4F6F8' }}>

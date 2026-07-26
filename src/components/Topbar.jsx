@@ -1,11 +1,15 @@
+import ProfileMenu from './ProfileMenu';
 import { notifications, pageTitles } from '../lib/mockData';
 
 export default function Topbar({
   screen,
   tenantOpen,
   notifOpen,
+  profileOpen,
   onToggleTenant,
   onToggleNotif,
+  onToggleProfile,
+  onLogout,
 }) {
   return (
     <div
@@ -147,22 +151,7 @@ export default function Topbar({
         </div>
       )}
 
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 999,
-          background: '#EAF0FE',
-          color: '#1E4FC4',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 700,
-          fontSize: 12.5,
-        }}
-      >
-        NM
-      </div>
+      <ProfileMenu open={profileOpen} onToggle={onToggleProfile} onLogout={onLogout} />
     </div>
   );
 }
