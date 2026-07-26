@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
+import Spinner from '../components/Spinner';
 import { getUsers, getAuditLog, toUserView, toAuditLogView } from '../lib/api';
 import { tenants, templates, integrations } from '../lib/mockData';
 
@@ -38,7 +39,7 @@ export default function Admin() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Users & roles</div>
-          {loading && <div style={{ fontSize: 13, color: '#9AA0A6' }}>Loading…</div>}
+          {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6' }}><Spinner size={14} />Loading…</div>}
           {error && <div style={{ fontSize: 13, color: '#B42318' }}>{error}</div>}
           {!loading && !error && users.length === 0 && (
             <div style={{ fontSize: 13, color: '#9AA0A6' }}>No users registered yet.</div>
@@ -72,7 +73,7 @@ export default function Admin() {
         </div>
         <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Audit log</div>
-          {auditLoading && <div style={{ fontSize: 13, color: '#9AA0A6' }}>Loading…</div>}
+          {auditLoading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6' }}><Spinner size={14} />Loading…</div>}
           {auditError && <div style={{ fontSize: 13, color: '#B42318' }}>{auditError}</div>}
           {!auditLoading && !auditError && auditLog.length === 0 && (
             <div style={{ fontSize: 13, color: '#9AA0A6' }}>No activity recorded yet.</div>

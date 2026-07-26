@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import HandoverBundle from '../components/HandoverBundle';
+import Spinner from '../components/Spinner';
 import { getNonConformities, toNonConformityView } from '../lib/api';
 import { commTypes, dcTests, acTests, monTests, safetyTests } from '../lib/mockData';
 
@@ -52,7 +53,7 @@ export default function Commissioning() {
       </div>
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Non-conformity tracker</div>
-        {loading && <div style={{ fontSize: 13, color: '#9AA0A6' }}>Loading…</div>}
+        {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6' }}><Spinner size={14} />Loading…</div>}
         {error && <div style={{ fontSize: 13, color: '#B42318' }}>{error}</div>}
         {!loading && !error && nonConformities.length === 0 && (
           <div style={{ fontSize: 13, color: '#9AA0A6' }}>No non-conformities logged.</div>

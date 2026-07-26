@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
+import Spinner from '../components/Spinner';
 import { getSurveys, toSurveyView } from '../lib/api';
 import { surveyPhotos, measurements, obstructions } from '../lib/mockData';
 
@@ -20,7 +21,7 @@ export default function Surveys() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading surveys…</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading surveys…</div>;
   if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
   if (surveys.length === 0) return <div style={{ padding: 20, color: '#6A7178' }}>No surveys yet.</div>;
 

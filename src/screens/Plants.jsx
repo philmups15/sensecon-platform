@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import HandoverBundle from '../components/HandoverBundle';
 import LifecycleTimeline from '../components/LifecycleTimeline';
+import Spinner from '../components/Spinner';
 import { getPlants, getWorkOrders, toPlantView, toWorkOrderView } from '../lib/api';
 import { plantActivity } from '../lib/mockData';
 
@@ -26,7 +27,7 @@ export default function Plants() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading plants…</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading plants…</div>;
   if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
   if (plants.length === 0) return <div style={{ padding: 20, color: '#6A7178' }}>No plants yet.</div>;
 

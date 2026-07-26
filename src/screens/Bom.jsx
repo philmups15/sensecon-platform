@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
+import Spinner from '../components/Spinner';
 import { getBomItems, toBomView } from '../lib/api';
 import { variance } from '../lib/mockData';
 
@@ -15,7 +16,7 @@ export default function Bom() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading bill of materials…</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading bill of materials…</div>;
   if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
 
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import HandoverBundle from '../components/HandoverBundle';
+import Spinner from '../components/Spinner';
 import { getPlants, getWorkOrders, toPlantView, toWorkOrderView } from '../lib/api';
 
 export default function Portal() {
@@ -19,7 +20,7 @@ export default function Portal() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading…</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading…</div>;
   if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
 
   return (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
+import Spinner from '../components/Spinner';
 import { getOpportunities, toOpportunityView, OPPORTUNITY_STAGE_META } from '../lib/api';
 
 const OPP_STAGES = Object.values(OPPORTUNITY_STAGE_META);
@@ -18,7 +19,7 @@ export default function Opportunities() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading opportunities…</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading opportunities…</div>;
   if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
 
   const selected = opportunities.find((o) => o.entityId === selectedId);

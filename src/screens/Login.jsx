@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Spinner from '../components/Spinner';
 import { login, register } from '../lib/api';
 
 export default function Login({ onSignIn }) {
@@ -80,8 +81,9 @@ export default function Login({ onSignIn }) {
         <button
           type="submit"
           disabled={loading}
-          style={{ width: '100%', padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: loading ? 'default' : 'pointer', marginBottom: 10, opacity: loading ? 0.7 : 1 }}
+          style={{ width: '100%', padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: loading ? 'default' : 'pointer', marginBottom: 10, opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
+          {loading && <Spinner size={14} color="#fff" />}
           {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
         </button>
         <button

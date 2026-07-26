@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import Spinner from '../components/Spinner';
 import { getReports, createReport, toReportView } from '../lib/api';
 import { reportCatalogue } from '../lib/mockData';
 
@@ -38,8 +39,9 @@ export default function Reports() {
             <button
               onClick={() => generate(r.name)}
               disabled={generating === r.name}
-              style={{ alignSelf: 'flex-start', marginTop: 6, padding: '7px 14px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: generating === r.name ? 'default' : 'pointer', opacity: generating === r.name ? 0.7 : 1 }}
+              style={{ alignSelf: 'flex-start', marginTop: 6, padding: '7px 14px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: generating === r.name ? 'default' : 'pointer', opacity: generating === r.name ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 7 }}
             >
+              {generating === r.name && <Spinner size={12} color="#fff" />}
               {generating === r.name ? 'Generating…' : 'Generate'}
             </button>
           </div>
@@ -47,7 +49,7 @@ export default function Reports() {
       </div>
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ padding: '12px 16px', fontSize: 12.5, fontWeight: 700, borderBottom: '1px solid #E4E8EB' }}>Recently generated</div>
-        {loading && <div style={{ padding: 16, fontSize: 13, color: '#9AA0A6' }}>Loading…</div>}
+        {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 16, fontSize: 13, color: '#9AA0A6' }}><Spinner size={14} />Loading…</div>}
         {error && <div style={{ padding: 16, fontSize: 13, color: '#B42318' }}>{error}</div>}
         {!loading && !error && reports.length === 0 && (
           <div style={{ padding: 16, fontSize: 13, color: '#9AA0A6' }}>No reports generated yet.</div>
