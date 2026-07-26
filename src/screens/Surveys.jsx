@@ -1,16 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
-import { surveys, surveyPhotos, measurements, obstructions } from '../lib/mockData';
+import { getSurveys, toSurveyView } from '../lib/api';
+import { surveyPhotos, measurements, obstructions } from '../lib/mockData';
 
 export default function Surveys() {
-  const [selectedId, setSelectedId] = useState('SRV-0148');
-  const detail = surveys.find((s) => s.id === selectedId);
+  const [surveys, setSurveys] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+
+  useEffect(() => {
+    getSurveys()
+      .then((dtos) => {
+        const views = dtos.map(toSurveyView);
+        setSurveys(views);
+        if (views.length > 0) setSelectedId(views[0].entityId);
+      })
+      .catch((err) => setError(err.message || 'Failed to load surveys.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading surveys…</div>;
+  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (surveys.length === 0) return <div style={{ padding: 20, color: '#6A7178' }}>No surveys yet.</div>;
+
+  const detail = surveys.find((s) => s.entityId === selectedId) || surveys[0];
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 16, alignItems: 'start' }}>
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
         {surveys.map((sv) => (
-          <div key={sv.id} onClick={() => setSelectedId(sv.id)} style={{ padding: '13px 16px', borderBottom: '1px solid #F0F2F4', cursor: 'pointer' }}>
+          <div key={sv.entityId} onClick={() => setSelectedId(sv.entityId)} style={{ padding: '13px 16px', borderBottom: '1px solid #F0F2F4', cursor: 'pointer' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{sv.plant}</div>
             </div>

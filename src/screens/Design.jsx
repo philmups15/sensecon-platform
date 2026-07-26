@@ -1,18 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
-import { designs, designTabs, designFieldsByTab, revisions, attachments } from '../lib/mockData';
+import { getDesigns, toDesignView } from '../lib/api';
+import { designTabs, designFieldsByTab, revisions, attachments } from '../lib/mockData';
 
 export default function Design() {
-  const [selectedId, setSelectedId] = useState('DSN-0091');
+  const [designs, setDesigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
   const [tab, setTab] = useState('array');
-  const detail = designs.find((d) => d.id === selectedId);
+
+  useEffect(() => {
+    getDesigns()
+      .then((dtos) => {
+        const views = dtos.map(toDesignView);
+        setDesigns(views);
+        if (views.length > 0) setSelectedId(views[0].entityId);
+      })
+      .catch((err) => setError(err.message || 'Failed to load designs.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading designs…</div>;
+  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (designs.length === 0) return <div style={{ padding: 20, color: '#6A7178' }}>No designs yet.</div>;
+
+  const detail = designs.find((d) => d.entityId === selectedId) || designs[0];
   const fields = designFieldsByTab[tab] || [];
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 240px', gap: 16, alignItems: 'start' }}>
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
         {designs.map((d) => (
-          <div key={d.id} onClick={() => setSelectedId(d.id)} style={{ padding: '13px 16px', borderBottom: '1px solid #F0F2F4', cursor: 'pointer' }}>
+          <div key={d.entityId} onClick={() => setSelectedId(d.entityId)} style={{ padding: '13px 16px', borderBottom: '1px solid #F0F2F4', cursor: 'pointer' }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>{d.project}</div>
             <div style={{ fontSize: 11, color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace', margin: '3px 0 7px' }}>
               {d.id} · Rev {d.rev}
@@ -24,9 +44,11 @@ export default function Design() {
 
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 20 }}>
         <div style={{ fontSize: 15, fontWeight: 700 }}>{detail.project}</div>
-        <div style={{ marginTop: 8, padding: '9px 12px', background: '#EAF0FE', borderRadius: 8, fontSize: 12, color: '#1E4FC4' }}>
-          Linked to survey <b>{detail.survey}</b> — findings drive these values
-        </div>
+        {detail.survey !== '—' && (
+          <div style={{ marginTop: 8, padding: '9px 12px', background: '#EAF0FE', borderRadius: 8, fontSize: 12, color: '#1E4FC4' }}>
+            Linked to survey <b>{detail.survey}</b> — findings drive these values
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 4, marginTop: 16, borderBottom: '1px solid #E4E8EB' }}>
           {designTabs.map(([key, label]) => {
             const active = tab === key;

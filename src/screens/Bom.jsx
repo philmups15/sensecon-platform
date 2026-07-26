@@ -1,15 +1,32 @@
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
-import { bomRows, variance } from '../lib/mockData';
+import { getBomItems, toBomView } from '../lib/api';
+import { variance } from '../lib/mockData';
 
 export default function Bom() {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    getBomItems()
+      .then((dtos) => setRows(dtos.map(toBomView)))
+      .catch((err) => setError(err.message || 'Failed to load BOM items.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading bill of materials…</div>;
+  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 0.6fr 0.8fr 1.2fr 1fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6', borderBottom: '1px solid #E4E8EB' }}>
           <div>Component</div><div>Qty</div><div>Unit cost</div><div>Supplier</div><div>Status</div>
         </div>
-        {bomRows.map((b, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 0.6fr 0.8fr 1.2fr 1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', alignItems: 'center' }}>
+        {rows.length === 0 && <div style={{ padding: 16, fontSize: 13, color: '#9AA0A6' }}>No BOM lines yet.</div>}
+        {rows.map((b) => (
+          <div key={b.entityId} style={{ display: 'grid', gridTemplateColumns: '2fr 0.6fr 0.8fr 1.2fr 1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', alignItems: 'center' }}>
             <div style={{ fontWeight: 600, color: '#141719' }}>{b.component}</div>
             <div>{b.qty}</div>
             <div>{b.unit}</div>

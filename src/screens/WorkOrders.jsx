@@ -1,10 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
-import { workOrders, woColumnsList, woChecklist, woParts, woDeviations } from '../lib/mockData';
+import { getWorkOrders, toWorkOrderView } from '../lib/api';
+import { woColumnsList, woChecklist, woParts, woDeviations } from '../lib/mockData';
 
 export default function WorkOrders() {
-  const [selectedId, setSelectedId] = useState('WO-2291');
-  const detail = workOrders.find((w) => w.id === selectedId);
+  const [workOrders, setWorkOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+
+  useEffect(() => {
+    getWorkOrders()
+      .then((dtos) => {
+        const views = dtos.map(toWorkOrderView);
+        setWorkOrders(views);
+        if (views.length > 0) setSelectedId(views[0].id);
+      })
+      .catch((err) => setError(err.message || 'Failed to load work orders.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading work orders…</div>;
+  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (workOrders.length === 0) return <div style={{ padding: 20, color: '#6A7178' }}>No work orders yet.</div>;
+
+  const detail = workOrders.find((w) => w.id === selectedId) || workOrders[0];
 
   const columns = woColumnsList.map((label) => ({
     label,
@@ -20,7 +40,7 @@ export default function WorkOrders() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {col.cards.map((c) => (
                 <div
-                  key={c.id}
+                  key={c.entityId}
                   onClick={() => setSelectedId(c.id)}
                   style={{
                     background: '#FFFFFF',

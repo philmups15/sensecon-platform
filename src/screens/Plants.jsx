@@ -1,15 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import HandoverBundle from '../components/HandoverBundle';
 import LifecycleTimeline from '../components/LifecycleTimeline';
-import { plants, plantTabsList, plantOpenWork, plantActivity } from '../lib/mockData';
+import { getPlants, getWorkOrders, toPlantView, toWorkOrderView } from '../lib/api';
+import { plantActivity } from '../lib/mockData';
 
 export default function Plants() {
-  const [selectedId, setSelectedId] = useState('PLT-014');
+  const [plants, setPlants] = useState([]);
+  const [workOrders, setWorkOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
   const [tab, setTab] = useState('overview');
   const [historyOpen, setHistoryOpen] = useState(false);
 
+  useEffect(() => {
+    Promise.all([getPlants(), getWorkOrders()])
+      .then(([plantDtos, workOrderDtos]) => {
+        const plantViews = plantDtos.map(toPlantView);
+        setPlants(plantViews);
+        setWorkOrders(workOrderDtos.map(toWorkOrderView));
+        if (plantViews.length > 0) setSelectedId(plantViews[0].id);
+      })
+      .catch((err) => setError(err.message || 'Failed to load plants.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading plants…</div>;
+  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (plants.length === 0) return <div style={{ padding: 20, color: '#6A7178' }}>No plants yet.</div>;
+
   const detail = plants.find((p) => p.id === selectedId) || plants[0];
+  const openWork = workOrders.filter((w) => w.plantId === detail.id && w.col !== 'Done');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -51,7 +73,7 @@ export default function Plants() {
         </div>
 
         <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #E4E8EB', marginBottom: 16 }}>
-          {plantTabsList.map(([key, label]) => {
+          {[['overview', 'Overview'], ['handover', 'Handover bundle'], ['work', 'Open work'], ['activity', 'Activity']].map(([key, label]) => {
             const active = tab === key;
             const color = active ? '#1E4FC4' : '#9AA0A6';
             return (
@@ -77,9 +99,7 @@ export default function Plants() {
             </div>
             {historyOpen && (
               <div style={{ padding: 14, border: '1px solid #E4E8EB', borderTop: 'none', borderRadius: '0 0 10px 10px', marginTop: -1, fontSize: 12.5, color: '#334155', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div>Survey SRV-0140 signed off 30 May 2026 by Temba N.</div>
-                <div>Design DSN-0079 approved, Rev A</div>
-                <div>Deployment completed 8 Mar 2026 — no deviations logged</div>
+                <div>No historical records captured for this plant yet.</div>
               </div>
             )}
           </>
@@ -87,12 +107,12 @@ export default function Plants() {
 
         {tab === 'handover' && <HandoverBundle />}
 
-        {tab === 'work' && plantOpenWork.map((w, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
+        {tab === 'work' && (openWork.length > 0 ? openWork.map((w) => (
+          <div key={w.entityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
             <div>{w.title} <span style={{ color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace', fontSize: 11 }}>{w.id}</span></div>
-            <Chip label={w.priority} tone={w.tone} />
+            <Chip label={w.priority} tone={w.priorityTone} />
           </div>
-        ))}
+        )) : <div style={{ padding: '10px 0', fontSize: 13, color: '#9AA0A6' }}>No open work orders.</div>)}
 
         {tab === 'activity' && plantActivity.map((a, i) => (
           <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>

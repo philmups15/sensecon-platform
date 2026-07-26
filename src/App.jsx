@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isAuthenticated, logout } from './lib/api';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Dashboard from './screens/Dashboard';
@@ -33,7 +34,7 @@ const SCREENS = {
 };
 
 export default function App() {
-  const [screen, setScreen] = useState('dashboard');
+  const [screen, setScreen] = useState(isAuthenticated() ? 'dashboard' : 'login');
   const [tenantOpen, setTenantOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
 
@@ -41,6 +42,11 @@ export default function App() {
     setScreen(next);
     setTenantOpen(false);
     setNotifOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    go('login');
   };
 
   if (screen === 'login') {
@@ -55,7 +61,7 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F6F8', overflow: 'hidden', position: 'relative', fontSize: 14 }}>
-      <Sidebar screen={screen} onNavigate={go} onLogout={() => go('login')} />
+      <Sidebar screen={screen} onNavigate={go} onLogout={handleLogout} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Topbar

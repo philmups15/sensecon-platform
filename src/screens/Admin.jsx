@@ -1,7 +1,28 @@
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
-import { tenants, users, templates, integrations, auditLog } from '../lib/mockData';
+import { getUsers, getAuditLog, toUserView, toAuditLogView } from '../lib/api';
+import { tenants, templates, integrations } from '../lib/mockData';
 
 export default function Admin() {
+  const [users, setUsers] = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [auditError, setAuditError] = useState('');
+
+  useEffect(() => {
+    getUsers()
+      .then((dtos) => setUsers(dtos.map(toUserView)))
+      .catch((err) => setError(err.message || 'Failed to load users.'))
+      .finally(() => setLoading(false));
+
+    getAuditLog()
+      .then((dtos) => setAuditLog(dtos.map(toAuditLogView)))
+      .catch((err) => setAuditError(err.message || 'Failed to load audit log.'))
+      .finally(() => setAuditLoading(false));
+  }, []);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
@@ -17,9 +38,17 @@ export default function Admin() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Users & roles</div>
-          {users.map((u, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
-              {u.name}
+          {loading && <div style={{ fontSize: 13, color: '#9AA0A6' }}>Loading…</div>}
+          {error && <div style={{ fontSize: 13, color: '#B42318' }}>{error}</div>}
+          {!loading && !error && users.length === 0 && (
+            <div style={{ fontSize: 13, color: '#9AA0A6' }}>No users registered yet.</div>
+          )}
+          {users.map((u) => (
+            <div key={u.entityId} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
+              <div>
+                {u.name}
+                <div style={{ fontSize: 11, color: '#9AA0A6' }}>{u.email}</div>
+              </div>
               <Chip label={u.role} tone={u.tone} />
             </div>
           ))}
@@ -43,8 +72,13 @@ export default function Admin() {
         </div>
         <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Audit log</div>
-          {auditLog.map((a, i) => (
-            <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #F0F2F4', fontSize: 12.5 }}>
+          {auditLoading && <div style={{ fontSize: 13, color: '#9AA0A6' }}>Loading…</div>}
+          {auditError && <div style={{ fontSize: 13, color: '#B42318' }}>{auditError}</div>}
+          {!auditLoading && !auditError && auditLog.length === 0 && (
+            <div style={{ fontSize: 13, color: '#9AA0A6' }}>No activity recorded yet.</div>
+          )}
+          {auditLog.map((a) => (
+            <div key={a.entityId} style={{ padding: '8px 0', borderBottom: '1px solid #F0F2F4', fontSize: 12.5 }}>
               <b>{a.who}</b> {a.action}
               <div style={{ color: '#9AA0A6', fontSize: 11 }}>{a.time}</div>
             </div>

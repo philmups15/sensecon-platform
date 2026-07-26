@@ -1,19 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
-import {
-  projects,
-  projectTabsList,
-  milestones,
-  tasks,
-  subs,
-  risks,
-  budgetLines,
-} from '../lib/mockData';
+import { getProjects, toProjectView } from '../lib/api';
+import { projectTabsList, milestones, tasks, subs, risks, budgetLines } from '../lib/mockData';
 
 export default function Projects() {
-  const [selectedId, setSelectedId] = useState('PRJ-0032');
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
   const [tab, setTab] = useState('tasks');
-  const detail = projects.find((p) => p.id === selectedId);
+
+  useEffect(() => {
+    getProjects()
+      .then((dtos) => {
+        const views = dtos.map(toProjectView);
+        setProjects(views);
+        if (views.length > 0) setSelectedId(views[0].id);
+      })
+      .catch((err) => setError(err.message || 'Failed to load projects.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading projects…</div>;
+  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (projects.length === 0) return <div style={{ padding: 20, color: '#6A7178' }}>No projects yet.</div>;
+
+  const detail = projects.find((p) => p.id === selectedId) || projects[0];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -22,7 +34,7 @@ export default function Projects() {
           <div>Project</div><div>Stage</div><div>PM</div><div>Budget</div><div>Actual</div>
         </div>
         {projects.map((p) => (
-          <div key={p.id} onClick={() => setSelectedId(p.id)} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', cursor: 'pointer', alignItems: 'center' }}>
+          <div key={p.entityId} onClick={() => setSelectedId(p.id)} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', cursor: 'pointer', alignItems: 'center' }}>
             <div style={{ fontWeight: 600, color: '#141719' }}>{p.name}</div>
             <div><Chip label={p.stage} tone={p.tone} /></div>
             <div>{p.pm}</div><div>{p.budget}</div><div>{p.actual}</div>

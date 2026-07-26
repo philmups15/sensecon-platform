@@ -1,15 +1,30 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
-import { opportunities, oppStages, oppStageTone } from '../lib/mockData';
+import { getOpportunities, toOpportunityView, OPPORTUNITY_STAGE_META } from '../lib/api';
+
+const OPP_STAGES = Object.values(OPPORTUNITY_STAGE_META);
 
 export default function Opportunities() {
+  const [opportunities, setOpportunities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [view, setView] = useState('list');
   const [selectedId, setSelectedId] = useState(null);
 
-  const selected = opportunities.find((o) => o.id === selectedId);
-  const byStage = oppStages.map((stage) => ({
+  useEffect(() => {
+    getOpportunities()
+      .then((dtos) => setOpportunities(dtos.map(toOpportunityView)))
+      .catch((err) => setError(err.message || 'Failed to load opportunities.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div style={{ padding: 20, color: '#6A7178' }}>Loading opportunities…</div>;
+  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+
+  const selected = opportunities.find((o) => o.entityId === selectedId);
+  const byStage = OPP_STAGES.map(({ label: stage, tone }) => ({
     stage,
-    tone: oppStageTone[stage],
+    tone,
     cards: opportunities.filter((o) => o.stage === stage),
   }));
 
@@ -30,15 +45,17 @@ export default function Opportunities() {
         </button>
       </div>
 
-      {view === 'list' && (
+      {opportunities.length === 0 && <div style={{ padding: 20, color: '#6A7178' }}>No opportunities yet.</div>}
+
+      {opportunities.length > 0 && view === 'list' && (
         <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.9fr 1fr 1.3fr 1fr 0.9fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6', borderBottom: '1px solid #E4E8EB' }}>
             <div>Customer</div><div>Capacity</div><div>Stage</div><div>Next action</div><div>Owner</div><div>Value</div>
           </div>
           {opportunities.map((o) => (
             <div
-              key={o.id}
-              onClick={() => setSelectedId(o.id)}
+              key={o.entityId}
+              onClick={() => setSelectedId(o.entityId)}
               style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.9fr 1fr 1.3fr 1fr 0.9fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', cursor: 'pointer', alignItems: 'center' }}
             >
               <div style={{ fontWeight: 600, color: '#141719' }}>
@@ -46,7 +63,7 @@ export default function Opportunities() {
                 <div style={{ fontSize: 11, color: '#9AA0A6', fontWeight: 500 }}>{o.location}</div>
               </div>
               <div style={{ color: '#334155' }}>{o.capacity}</div>
-              <div><Chip label={o.stage} tone={oppStageTone[o.stage]} /></div>
+              <div><Chip label={o.stage} tone={o.tone} /></div>
               <div style={{ color: '#334155' }}>{o.next}</div>
               <div style={{ color: '#334155' }}>{o.owner}</div>
               <div style={{ color: '#141719', fontWeight: 600 }}>{o.value}</div>
@@ -55,7 +72,7 @@ export default function Opportunities() {
         </div>
       )}
 
-      {view === 'kanban' && (
+      {opportunities.length > 0 && view === 'kanban' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 12 }}>
           {byStage.map((col) => (
             <div key={col.stage}>
@@ -63,8 +80,8 @@ export default function Opportunities() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {col.cards.map((c) => (
                   <div
-                    key={c.id}
-                    onClick={() => setSelectedId(c.id)}
+                    key={c.entityId}
+                    onClick={() => setSelectedId(c.entityId)}
                     style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 10, padding: 12, boxShadow: '0 1px 2px rgba(20,23,25,0.05)', cursor: 'pointer' }}
                   >
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: '#141719' }}>{c.customer}</div>

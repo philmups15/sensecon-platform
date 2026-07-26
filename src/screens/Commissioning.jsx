@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import HandoverBundle from '../components/HandoverBundle';
-import { commTypes, dcTests, acTests, monTests, safetyTests, nonConformities } from '../lib/mockData';
+import { getNonConformities, toNonConformityView } from '../lib/api';
+import { commTypes, dcTests, acTests, monTests, safetyTests } from '../lib/mockData';
 
 function TestGroup({ title, tests }) {
   return (
@@ -19,6 +20,16 @@ function TestGroup({ title, tests }) {
 
 export default function Commissioning() {
   const [type, setType] = useState('rooftop');
+  const [nonConformities, setNonConformities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    getNonConformities()
+      .then((dtos) => setNonConformities(dtos.map(toNonConformityView)))
+      .catch((err) => setError(err.message || 'Failed to load non-conformities.'))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -41,8 +52,13 @@ export default function Commissioning() {
       </div>
       <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16 }}>
         <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Non-conformity tracker</div>
-        {nonConformities.map((nc, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
+        {loading && <div style={{ fontSize: 13, color: '#9AA0A6' }}>Loading…</div>}
+        {error && <div style={{ fontSize: 13, color: '#B42318' }}>{error}</div>}
+        {!loading && !error && nonConformities.length === 0 && (
+          <div style={{ fontSize: 13, color: '#9AA0A6' }}>No non-conformities logged.</div>
+        )}
+        {nonConformities.map((nc) => (
+          <div key={nc.entityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
             <div>
               <span style={{ fontFamily: 'SF Mono, Consolas, monospace', color: '#9AA0A6', fontSize: 11 }}>{nc.id}</span> {nc.desc} <span style={{ color: '#9AA0A6' }}>— {nc.plant}</span>
             </div>
