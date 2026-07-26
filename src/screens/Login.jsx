@@ -28,7 +28,7 @@ export default function Login({ onSignIn }) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
       <form onSubmit={submit} style={{ width: 380, background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 32 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 22 }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
