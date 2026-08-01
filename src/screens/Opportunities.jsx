@@ -6,6 +6,7 @@ import {
   getOpportunity,
   createOpportunity,
   updateOpportunity,
+  deleteOpportunity,
   uploadOpportunityAttachments,
   downloadOpportunityAttachment,
   getCurrentUser,
@@ -28,6 +29,20 @@ function buildStagePayload(o, stageKey) {
   };
 }
 
+function buildEditPayload(existing, form) {
+  return {
+    code: existing.id,
+    customer: form.customer,
+    capacity: form.capacity,
+    stage: existing.stageKey,
+    location: form.location,
+    nextAction: form.nextAction,
+    owner: form.owner,
+    value: Number(form.value) || 0,
+    notes: form.notes || null,
+  };
+}
+
 function formatBytes(bytes) {
   if (!bytes) return '0 KB';
   const kb = bytes / 1024;
@@ -43,6 +58,8 @@ const stageStepStyle = {
   fontWeight: 700,
   cursor: 'pointer',
 };
+
+const dangerStepStyle = { ...stageStepStyle, color: '#B42318' };
 
 const selectStyle = {
   padding: '5px 8px',
@@ -60,6 +77,8 @@ const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px'
 
 const EMPTY_FORM = { customer: '', capacity: '', location: '', owner: '', nextAction: '', value: '', notes: '' };
 
+const LIST_GRID_COLUMNS = '1.4fr 0.8fr 1.1fr 1.2fr 0.9fr 0.8fr 1.3fr';
+
 export default function Opportunities() {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,14 +90,18 @@ export default function Opportunities() {
   const [dragId, setDragId] = useState(null);
 
   const [currentUser, setCurrentUser] = useState(null);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [formMode, setFormMode] = useState(null); // null | 'add' | 'edit'
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [files, setFiles] = useState([]);
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const [attachError, setAttachError] = useState('');
   const [uploadingMore, setUploadingMore] = useState(false);
+
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     getOpportunities()
@@ -117,8 +140,30 @@ export default function Opportunities() {
   const openAddForm = () => {
     setForm(EMPTY_FORM);
     setFiles([]);
-    setCreateError('');
-    setShowAddForm(true);
+    setFormError('');
+    setEditingId(null);
+    setFormMode('add');
+  };
+
+  const openEditForm = (o) => {
+    setForm({
+      customer: o.customer,
+      capacity: o.capacity,
+      location: o.location,
+      owner: o.owner,
+      nextAction: o.next,
+      value: o.rawValue != null ? String(o.rawValue) : '',
+      notes: o.notes || '',
+    });
+    setFormError('');
+    setEditingId(o.entityId);
+    setFormMode('edit');
+  };
+
+  const closeForm = () => {
+    if (saving) return;
+    setFormMode(null);
+    setEditingId(null);
   };
 
   const addFiles = (fileList) => {
@@ -129,39 +174,50 @@ export default function Opportunities() {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const submitAddForm = async (e) => {
+  const submitForm = async (e) => {
     e.preventDefault();
     if (!form.customer.trim()) {
-      setCreateError('Customer is required.');
+      setFormError('Customer is required.');
       return;
     }
-    setCreating(true);
-    setCreateError('');
+    setSaving(true);
+    setFormError('');
     try {
-      const id = await createOpportunity({
-        customer: form.customer,
-        capacity: form.capacity,
-        stage: 'Qualifying',
-        location: form.location,
-        nextAction: form.nextAction,
-        owner: form.owner,
-        value: Number(form.value) || 0,
-        notes: form.notes || null,
-      });
+      if (formMode === 'edit') {
+        const existing = opportunities.find((o) => o.entityId === editingId);
+        await updateOpportunity(editingId, buildEditPayload(existing, form));
+        const dto = await getOpportunity(editingId);
+        const view = toOpportunityView(dto);
+        setOpportunities((prev) => prev.map((item) => (item.entityId === view.entityId ? view : item)));
+        setFormMode(null);
+        setEditingId(null);
+        setSelectedId(view.entityId);
+      } else {
+        const id = await createOpportunity({
+          customer: form.customer,
+          capacity: form.capacity,
+          stage: 'Qualifying',
+          location: form.location,
+          nextAction: '',
+          owner: form.owner,
+          value: Number(form.value) || 0,
+          notes: form.notes || null,
+        });
 
-      if (files.length > 0) {
-        await uploadOpportunityAttachments(id, files);
+        if (files.length > 0) {
+          await uploadOpportunityAttachments(id, files);
+        }
+
+        const dto = await getOpportunity(id);
+        const view = toOpportunityView(dto);
+        setOpportunities((prev) => [view, ...prev]);
+        setFormMode(null);
+        setSelectedId(view.entityId);
       }
-
-      const dto = await getOpportunity(id);
-      const view = toOpportunityView(dto);
-      setOpportunities((prev) => [view, ...prev]);
-      setShowAddForm(false);
-      setSelectedId(view.entityId);
     } catch (err) {
-      setCreateError(err.message || 'Failed to create opportunity.');
+      setFormError(err.message || 'Failed to save opportunity.');
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   };
 
@@ -179,6 +235,21 @@ export default function Opportunities() {
       setAttachError(err.message || 'Failed to upload attachment(s).');
     } finally {
       setUploadingMore(false);
+    }
+  };
+
+  const removeOpportunity = async (o) => {
+    if (!window.confirm(`Delete the opportunity for ${o.customer}? This cannot be undone.`)) return;
+    setDeletingId(o.entityId);
+    setDeleteError('');
+    try {
+      await deleteOpportunity(o.entityId);
+      setOpportunities((prev) => prev.filter((item) => item.entityId !== o.entityId));
+      setSelectedId((prev) => (prev === o.entityId ? null : prev));
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete opportunity.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -220,18 +291,19 @@ export default function Opportunities() {
       {view === 'kanban' && <div style={{ fontSize: 11.5, color: '#9AA0A6', marginTop: -8 }}>Drag a card to another column to move it through the pipeline.</div>}
 
       {moveError && <div style={{ padding: '8px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{moveError}</div>}
+      {deleteError && <div style={{ padding: '8px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
 
       {opportunities.length === 0 && <div style={{ padding: 20, color: '#6A7178' }}>No opportunities yet.</div>}
 
       {opportunities.length > 0 && view === 'list' && (
         <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.9fr 1.1fr 1.3fr 1fr 0.9fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6', borderBottom: '1px solid #E4E8EB' }}>
-            <div>Customer</div><div>Capacity</div><div>Stage</div><div>Next action</div><div>Owner</div><div>Value</div>
+          <div style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLUMNS, padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6', borderBottom: '1px solid #E4E8EB' }}>
+            <div>Customer</div><div>Capacity</div><div>Stage</div><div>Next action</div><div>Owner</div><div>Value</div><div>Actions</div>
           </div>
           {opportunities.map((o) => (
             <div
               key={o.entityId}
-              style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.9fr 1.1fr 1.3fr 1fr 0.9fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', alignItems: 'center' }}
+              style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLUMNS, padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', alignItems: 'center' }}
             >
               <div onClick={() => setSelectedId(o.entityId)} style={{ fontWeight: 600, color: '#141719', cursor: 'pointer' }}>
                 {o.customer}
@@ -255,6 +327,15 @@ export default function Opportunities() {
               <div onClick={() => setSelectedId(o.entityId)} style={{ color: '#334155', cursor: 'pointer' }}>{o.next}</div>
               <div onClick={() => setSelectedId(o.entityId)} style={{ color: '#334155', cursor: 'pointer' }}>{o.owner}</div>
               <div onClick={() => setSelectedId(o.entityId)} style={{ color: '#141719', fontWeight: 600, cursor: 'pointer' }}>{o.value}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <button type="button" onClick={() => setSelectedId(o.entityId)} style={stageStepStyle}>View</button>
+                <button type="button" onClick={() => openEditForm(o)} style={stageStepStyle}>Edit</button>
+                {deletingId === o.entityId ? (
+                  <Spinner size={12} />
+                ) : (
+                  <button type="button" onClick={() => removeOpportunity(o)} style={dangerStepStyle}>Delete</button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -319,6 +400,14 @@ export default function Opportunities() {
                         Next ›
                       </button>
                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); openEditForm(c); }} style={stageStepStyle}>Edit</button>
+                      {deletingId === c.entityId ? (
+                        <Spinner size={12} />
+                      ) : (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); removeOpportunity(c); }} style={dangerStepStyle}>Delete</button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -331,7 +420,15 @@ export default function Opportunities() {
         <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 380, background: '#FFFFFF', borderLeft: '1px solid #E4E8EB', boxShadow: '-8px 0 24px rgba(20,23,25,0.12)', zIndex: 30, padding: 20, overflow: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ fontSize: 16, fontWeight: 700 }}>{selected.customer}</div>
-            <span onClick={() => setSelectedId(null)} style={{ cursor: 'pointer', color: '#9AA0A6', fontSize: 18 }}>×</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button type="button" onClick={() => openEditForm(selected)} style={stageStepStyle}>Edit</button>
+              {deletingId === selected.entityId ? (
+                <Spinner size={12} />
+              ) : (
+                <button type="button" onClick={() => removeOpportunity(selected)} style={dangerStepStyle}>Delete</button>
+              )}
+              <span onClick={() => setSelectedId(null)} style={{ cursor: 'pointer', color: '#9AA0A6', fontSize: 18 }}>×</span>
+            </div>
           </div>
           <div style={{ fontSize: 12, color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{selected.id}</div>
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13 }}>
@@ -398,23 +495,25 @@ export default function Opportunities() {
         </div>
       )}
 
-      {showAddForm && (
+      {formMode && (
         <div
-          onClick={() => !creating && setShowAddForm(false)}
+          onClick={closeForm}
           style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,25,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <form
             onClick={(e) => e.stopPropagation()}
-            onSubmit={submitAddForm}
+            onSubmit={submitForm}
             style={{ width: 460, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(20,23,25,0.2)' }}
           >
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Add opportunity</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Chip label="Qualifying" tone="slate" />
-              <span style={{ fontSize: 11.5, color: '#9AA0A6' }}>
-                Created {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} by {currentUser?.displayName || 'you'}
-              </span>
-            </div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>{formMode === 'edit' ? 'Edit opportunity' : 'Add opportunity'}</div>
+            {formMode === 'add' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <Chip label="Qualifying" tone="slate" />
+                <span style={{ fontSize: 11.5, color: '#9AA0A6' }}>
+                  Created {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} by {currentUser?.displayName || 'you'}
+                </span>
+              </div>
+            )}
 
             <div style={fieldLabelStyle}>Customer *</div>
             <input
@@ -466,13 +565,17 @@ export default function Opportunities() {
               </div>
             </div>
 
-            <div style={fieldLabelStyle}>Next action</div>
-            <input
-              value={form.nextAction}
-              onChange={(e) => setForm((f) => ({ ...f, nextAction: e.target.value }))}
-              placeholder="e.g. Schedule site visit"
-              style={inputStyle}
-            />
+            {formMode === 'edit' && (
+              <>
+                <div style={fieldLabelStyle}>Next action</div>
+                <input
+                  value={form.nextAction}
+                  onChange={(e) => setForm((f) => ({ ...f, nextAction: e.target.value }))}
+                  placeholder="e.g. Schedule site visit"
+                  style={inputStyle}
+                />
+              </>
+            )}
 
             <div style={fieldLabelStyle}>Notes</div>
             <textarea
@@ -482,31 +585,35 @@ export default function Opportunities() {
               style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
             />
 
-            <div style={fieldLabelStyle}>Attachments (optional)</div>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 600, color: '#2563EB', cursor: 'pointer' }}>
-              + Choose files
-              <input type="file" multiple onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} style={{ display: 'none' }} />
-            </label>
-            {files.length > 0 && (
-              <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {files.map((f, i) => (
-                  <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#F7F8F9', borderRadius: 6, fontSize: 12 }}>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
-                    <span onClick={() => removeFile(i)} style={{ cursor: 'pointer', color: '#9AA0A6', flex: 'none', marginLeft: 8 }}>×</span>
+            {formMode === 'add' && (
+              <>
+                <div style={fieldLabelStyle}>Attachments (optional)</div>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 600, color: '#2563EB', cursor: 'pointer' }}>
+                  + Choose files
+                  <input type="file" multiple onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} style={{ display: 'none' }} />
+                </label>
+                {files.length > 0 && (
+                  <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {files.map((f, i) => (
+                      <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#F7F8F9', borderRadius: 6, fontSize: 12 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+                        <span onClick={() => removeFile(i)} style={{ cursor: 'pointer', color: '#9AA0A6', flex: 'none', marginLeft: 8 }}>×</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
 
-            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
+            {formError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{formError}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+              <button type="button" onClick={closeForm} disabled={saving} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                 Cancel
               </button>
-              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                {creating && <Spinner size={12} color="#fff" />}
-                Add opportunity
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {saving && <Spinner size={12} color="#fff" />}
+                {formMode === 'edit' ? 'Save changes' : 'Add opportunity'}
               </button>
             </div>
           </form>
