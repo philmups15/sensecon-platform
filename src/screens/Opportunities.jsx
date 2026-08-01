@@ -1,7 +1,17 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
-import { getOpportunities, updateOpportunity, toOpportunityView, OPPORTUNITY_STAGE_META } from '../lib/api';
+import {
+  getOpportunities,
+  getOpportunity,
+  createOpportunity,
+  updateOpportunity,
+  uploadOpportunityAttachments,
+  downloadOpportunityAttachment,
+  getCurrentUser,
+  toOpportunityView,
+  OPPORTUNITY_STAGE_META,
+} from '../lib/api';
 
 const OPP_STAGE_ENTRIES = Object.entries(OPPORTUNITY_STAGE_META);
 
@@ -16,6 +26,12 @@ function buildStagePayload(o, stageKey) {
     owner: o.owner,
     value: o.rawValue,
   };
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return '0 KB';
+  const kb = bytes / 1024;
+  return kb < 1024 ? `${kb.toFixed(kb < 10 ? 1 : 0)} KB` : `${(kb / 1024).toFixed(1)} MB`;
 }
 
 const stageStepStyle = {
@@ -39,6 +55,11 @@ const selectStyle = {
   cursor: 'pointer',
 };
 
+const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#334155', marginBottom: 5 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, marginBottom: 12 };
+
+const EMPTY_FORM = { customer: '', capacity: '', location: '', owner: '', nextAction: '', value: '', notes: '' };
+
 export default function Opportunities() {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,11 +70,22 @@ export default function Opportunities() {
   const [moveError, setMoveError] = useState('');
   const [dragId, setDragId] = useState(null);
 
+  const [currentUser, setCurrentUser] = useState(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [files, setFiles] = useState([]);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+
+  const [attachError, setAttachError] = useState('');
+  const [uploadingMore, setUploadingMore] = useState(false);
+
   useEffect(() => {
     getOpportunities()
       .then((dtos) => setOpportunities(dtos.map(toOpportunityView)))
       .catch((err) => setError(err.message || 'Failed to load opportunities.'))
       .finally(() => setLoading(false));
+    getCurrentUser().then(setCurrentUser).catch(() => {});
   }, []);
 
   const changeStage = async (o, stageKey) => {
@@ -79,6 +111,74 @@ export default function Opportunities() {
       setMoveError(err.message || 'Failed to move opportunity to the new stage.');
     } finally {
       setMovingId(null);
+    }
+  };
+
+  const openAddForm = () => {
+    setForm(EMPTY_FORM);
+    setFiles([]);
+    setCreateError('');
+    setShowAddForm(true);
+  };
+
+  const addFiles = (fileList) => {
+    setFiles((prev) => [...prev, ...Array.from(fileList)]);
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const submitAddForm = async (e) => {
+    e.preventDefault();
+    if (!form.customer.trim()) {
+      setCreateError('Customer is required.');
+      return;
+    }
+    setCreating(true);
+    setCreateError('');
+    try {
+      const id = await createOpportunity({
+        customer: form.customer,
+        capacity: form.capacity,
+        stage: 'Qualifying',
+        location: form.location,
+        nextAction: form.nextAction,
+        owner: form.owner,
+        value: Number(form.value) || 0,
+        notes: form.notes || null,
+      });
+
+      if (files.length > 0) {
+        await uploadOpportunityAttachments(id, files);
+      }
+
+      const dto = await getOpportunity(id);
+      const view = toOpportunityView(dto);
+      setOpportunities((prev) => [view, ...prev]);
+      setShowAddForm(false);
+      setSelectedId(view.entityId);
+    } catch (err) {
+      setCreateError(err.message || 'Failed to create opportunity.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const addMoreAttachments = async (opportunity, fileList) => {
+    const newFiles = Array.from(fileList);
+    if (newFiles.length === 0) return;
+    setAttachError('');
+    setUploadingMore(true);
+    try {
+      await uploadOpportunityAttachments(opportunity.entityId, newFiles);
+      const dto = await getOpportunity(opportunity.entityId);
+      const view = toOpportunityView(dto);
+      setOpportunities((prev) => prev.map((item) => (item.entityId === view.entityId ? view : item)));
+    } catch (err) {
+      setAttachError(err.message || 'Failed to upload attachment(s).');
+    } finally {
+      setUploadingMore(false);
     }
   };
 
@@ -109,8 +209,15 @@ export default function Opportunities() {
         >
           Kanban
         </button>
-        {view === 'kanban' && <span style={{ fontSize: 11.5, color: '#9AA0A6' }}>Drag a card to another column to move it through the pipeline.</span>}
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={openAddForm}
+          style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#2563EB', color: '#fff', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+        >
+          + Add opportunity
+        </button>
       </div>
+      {view === 'kanban' && <div style={{ fontSize: 11.5, color: '#9AA0A6', marginTop: -8 }}>Drag a card to another column to move it through the pipeline.</div>}
 
       {moveError && <div style={{ padding: '8px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{moveError}</div>}
 
@@ -244,15 +351,165 @@ export default function Opportunities() {
                 {movingId === selected.entityId ? <Spinner size={12} /> : <Chip label={selected.stage} tone={selected.tone} />}
               </div>
             </div>
-            <div><span style={{ color: '#6A7178' }}>Capacity</span><div style={{ fontWeight: 600 }}>{selected.capacity}</div></div>
-            <div><span style={{ color: '#6A7178' }}>Location</span><div style={{ fontWeight: 600 }}>{selected.location}</div></div>
+            <div><span style={{ color: '#6A7178' }}>Capacity</span><div style={{ fontWeight: 600 }}>{selected.capacity || '—'}</div></div>
+            <div><span style={{ color: '#6A7178' }}>Location</span><div style={{ fontWeight: 600 }}>{selected.location || '—'}</div></div>
             <div><span style={{ color: '#6A7178' }}>Indicative value</span><div style={{ fontWeight: 600 }}>{selected.value}</div></div>
-            <div><span style={{ color: '#6A7178' }}>Next action</span><div style={{ fontWeight: 600 }}>{selected.next}</div></div>
-            <div><span style={{ color: '#6A7178' }}>Owner</span><div style={{ fontWeight: 600 }}>{selected.owner}</div></div>
+            <div><span style={{ color: '#6A7178' }}>Next action</span><div style={{ fontWeight: 600 }}>{selected.next || '—'}</div></div>
+            <div><span style={{ color: '#6A7178' }}>Owner</span><div style={{ fontWeight: 600 }}>{selected.owner || '—'}</div></div>
+            <div><span style={{ color: '#6A7178' }}>Notes</span><div style={{ fontWeight: 600, whiteSpace: 'pre-wrap' }}>{selected.notes || '—'}</div></div>
+            <div><span style={{ color: '#6A7178' }}>Created</span><div style={{ fontWeight: 600 }}>{selected.createdDate} by {selected.createdByName || 'Unknown'}</div></div>
+
+            <div>
+              <span style={{ color: '#6A7178' }}>Attachments</span>
+              <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {selected.attachments.length === 0 && <div style={{ color: '#9AA0A6', fontWeight: 500 }}>No attachments.</div>}
+                {selected.attachments.map((a) => (
+                  <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 8px', background: '#F7F8F9', borderRadius: 6 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.fileName}</div>
+                      <div style={{ fontSize: 10.5, color: '#9AA0A6' }}>{formatBytes(a.sizeBytes)} · {a.date}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => downloadOpportunityAttachment(selected.entityId, a.id, a.fileName)}
+                      style={{ ...stageStepStyle, flex: 'none' }}
+                    >
+                      Download
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {attachError && <div style={{ marginTop: 8, padding: '6px 8px', background: '#FBE9E7', color: '#B42318', borderRadius: 6, fontSize: 11.5 }}>{attachError}</div>}
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 11.5, fontWeight: 600, color: '#2563EB', cursor: 'pointer' }}>
+                {uploadingMore ? <Spinner size={12} /> : '+'} Add attachment
+                <input
+                  type="file"
+                  multiple
+                  disabled={uploadingMore}
+                  onChange={(e) => { addMoreAttachments(selected, e.target.files); e.target.value = ''; }}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
           </div>
           <button style={{ width: '100%', marginTop: 20, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
             Convert to project
           </button>
+        </div>
+      )}
+
+      {showAddForm && (
+        <div
+          onClick={() => !creating && setShowAddForm(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,25,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <form
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={submitAddForm}
+            style={{ width: 460, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(20,23,25,0.2)' }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Add opportunity</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <Chip label="Qualifying" tone="slate" />
+              <span style={{ fontSize: 11.5, color: '#9AA0A6' }}>
+                Created {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} by {currentUser?.displayName || 'you'}
+              </span>
+            </div>
+
+            <div style={fieldLabelStyle}>Customer *</div>
+            <input
+              value={form.customer}
+              onChange={(e) => setForm((f) => ({ ...f, customer: e.target.value }))}
+              required
+              style={inputStyle}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <div style={fieldLabelStyle}>Capacity</div>
+                <input
+                  value={form.capacity}
+                  onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))}
+                  placeholder="e.g. 480 kWp"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>Location</div>
+                <input
+                  value={form.location}
+                  onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <div style={fieldLabelStyle}>Owner</div>
+                <input
+                  value={form.owner}
+                  onChange={(e) => setForm((f) => ({ ...f, owner: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>Estimated value ($)</div>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={form.value}
+                  onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div style={fieldLabelStyle}>Next action</div>
+            <input
+              value={form.nextAction}
+              onChange={(e) => setForm((f) => ({ ...f, nextAction: e.target.value }))}
+              placeholder="e.g. Schedule site visit"
+              style={inputStyle}
+            />
+
+            <div style={fieldLabelStyle}>Notes</div>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              rows={3}
+              style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+            />
+
+            <div style={fieldLabelStyle}>Attachments (optional)</div>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 600, color: '#2563EB', cursor: 'pointer' }}>
+              + Choose files
+              <input type="file" multiple onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} style={{ display: 'none' }} />
+            </label>
+            {files.length > 0 && (
+              <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {files.map((f, i) => (
+                  <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#F7F8F9', borderRadius: 6, fontSize: 12 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
+                    <span onClick={() => removeFile(i)} style={{ cursor: 'pointer', color: '#9AA0A6', flex: 'none', marginLeft: 8 }}>×</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {creating && <Spinner size={12} color="#fff" />}
+                Add opportunity
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

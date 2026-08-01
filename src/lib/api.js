@@ -45,6 +45,47 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   return res.json();
 }
 
+async function uploadFiles(path, files) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { method: 'POST', headers, body: formData });
+
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const payload = await res.json();
+      detail = payload.title || JSON.stringify(payload.errors) || detail;
+    } catch {
+      // response had no JSON body
+    }
+    throw new Error(detail);
+  }
+
+  return res.json();
+}
+
+export async function downloadFile(path, fileName) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { headers });
+  if (!res.ok) throw new Error('Failed to download file.');
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 // ---- Auth ----
 export async function login(email, password) {
   const result = await request('/api/auth/login', { method: 'POST', auth: false, body: { email, password } });
@@ -85,6 +126,9 @@ export const getOpportunity = (id) => request(`/api/opportunities/${id}`);
 export const createOpportunity = (data) => request('/api/opportunities', { method: 'POST', body: data });
 export const updateOpportunity = (id, data) => request(`/api/opportunities/${id}`, { method: 'PUT', body: data });
 export const deleteOpportunity = (id) => request(`/api/opportunities/${id}`, { method: 'DELETE' });
+export const uploadOpportunityAttachments = (id, files) => uploadFiles(`/api/opportunities/${id}/attachments`, files);
+export const downloadOpportunityAttachment = (id, attachmentId, fileName) =>
+  downloadFile(`/api/opportunities/${id}/attachments/${attachmentId}`, fileName);
 
 // ---- Surveys ----
 export const getSurveys = () => request('/api/surveys');
@@ -248,6 +292,16 @@ export function toOpportunityView(dto) {
     owner: dto.owner,
     value: `$${Number(dto.value).toLocaleString()}`,
     rawValue: dto.value,
+    notes: dto.notes || '',
+    createdByName: dto.createdByName,
+    createdDate: formatDate(dto.created),
+    attachments: (dto.attachments || []).map((a) => ({
+      id: a.id,
+      fileName: a.fileName,
+      sizeBytes: a.sizeBytes,
+      uploadedByName: a.uploadedByName,
+      date: formatDate(a.created),
+    })),
   };
 }
 
