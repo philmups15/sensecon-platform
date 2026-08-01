@@ -241,11 +241,13 @@ export function toOpportunityView(dto) {
     customer: dto.customer,
     capacity: dto.capacity,
     stage: stageMeta.label,
+    stageKey: dto.stage,
     tone: stageMeta.tone,
     location: dto.location,
     next: dto.nextAction,
     owner: dto.owner,
     value: `$${Number(dto.value).toLocaleString()}`,
+    rawValue: dto.value,
   };
 }
 
