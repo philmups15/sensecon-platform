@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Administration</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f5f7; --card:#ffffff; --border:#e6e8eb; --text:#1a1a1a; --muted:#6b7280;
+    --blue:#2563eb; --green-bg:#e6f4ea; --green-tx:#1e7d34; --orange-bg:#fdf1e0; --orange-tx:#b8600a;
+    --red-bg:#fde8e8; --red-tx:#b91c1c; --gray-bg:#f1f2f4;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  a{color:var(--blue);text-decoration:none;}
+  .topbar{display:flex;align-items:center;gap:16px;padding:14px 24px;background:#fff;border-bottom:1px solid var(--border);}
+  .topbar h1{font-size:18px;margin:0;white-space:nowrap;}
+  .search{flex:1;max-width:420px;}
+  .search input{width:100%;padding:8px 12px 8px 34px;border:1px solid var(--border);border-radius:8px;background:#f7f8f9 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="%236b7280" stroke-width="2"><circle cx="6" cy="6" r="5"/><line x1="10" y1="10" x2="13" y2="13"/></svg>') no-repeat 10px center;font-size:13px;}
+  .topbar-right{display:flex;align-items:center;gap:14px;margin-left:auto;}
+  .tenant-select{padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;}
+  .avatar{width:32px;height:32px;border-radius:50%;background:#e8ecff;color:#3b4ab8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+  .bell{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;font-size:15px;}
+  .bell .dot{position:absolute;top:6px;right:7px;width:6px;height:6px;background:#e0245e;border-radius:50%;}
+
+  .tabs{display:flex;gap:4px;padding:0 24px;background:#fff;border-bottom:1px solid var(--border);overflow-x:auto;}
+  .tab-btn{padding:12px 16px;font-size:13.5px;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+  .tab-btn.active{color:var(--text);border-bottom-color:var(--blue);}
+  .tab-btn:hover{color:var(--text);}
+
+  .page{display:none;padding:22px 24px;max-width:1240px;margin:0 auto;}
+  .page.active{display:block;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:20px;}
+  .card-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border);}
+  .card-head h2{font-size:15px;margin:0;}
+  .card-body{padding:4px 18px 14px;}
+  .row-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #f0f1f3;}
+  .row-item:last-child{border-bottom:none;}
+  .row-title{font-weight:600;font-size:14px;}
+  .row-sub{color:var(--muted);font-size:12.5px;margin-top:2px;}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;}
+  .pill .d{width:6px;height:6px;border-radius:50%;}
+  .pill-green{background:var(--green-bg);color:var(--green-tx);} .pill-green .d{background:var(--green-tx);}
+  .pill-orange{background:var(--orange-bg);color:var(--orange-tx);} .pill-orange .d{background:var(--orange-tx);}
+  .pill-red{background:var(--red-bg);color:var(--red-tx);} .pill-red .d{background:var(--red-tx);}
+  .pill-gray{background:var(--gray-bg);color:#555;} .pill-gray .d{background:#888;}
+
+  .btn{border:1px solid var(--border);background:#fff;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);}
+  .btn:hover{background:#f7f8f9;}
+  .btn-primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .btn-primary:hover{background:#1e50c4;}
+  .btn-danger{color:var(--red-tx);}
+  .btn-sm{padding:6px 10px;font-size:12.5px;}
+  .btn-row{display:flex;gap:8px;align-items:center;}
+
+  .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .section-head h2{font-size:19px;margin:0;}
+  .section-sub{color:var(--muted);font-size:13px;margin-top:2px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.02em;padding:10px 12px;border-bottom:1px solid var(--border);}
+  td{padding:12px;border-bottom:1px solid #f0f1f3;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .name-cell .n{font-weight:600;}
+  .name-cell .e{color:var(--muted);font-size:12.5px;}
+  .role-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);padding:5px 10px;border-radius:7px;font-size:12.5px;font-weight:700;background:#fff;}
+
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .toolbar input[type=text], .toolbar select, .toolbar input[type=date]{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;}
+  .spacer{flex:1;}
+
+  .kebab-wrap{position:relative;display:inline-block;}
+  .kebab{width:30px;height:30px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;color:var(--muted);line-height:1;}
+  .kebab:hover{background:#f2f3f5;}
+  .menu{position:absolute;right:0;top:34px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:190px;z-index:50;display:none;overflow:hidden;}
+  .menu.open{display:block;}
+  .menu button{display:flex;width:100%;align-items:center;gap:8px;padding:10px 12px;border:none;background:none;text-align:left;font-size:13px;cursor:pointer;color:var(--text);}
+  .menu button:hover{background:#f5f6f8;}
+  .menu button.danger{color:var(--red-tx);}
+  .menu hr{border:none;border-top:1px solid var(--border);margin:4px 0;}
+
+  .pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 0 4px;font-size:13px;color:var(--muted);flex-wrap:wrap;gap:10px;}
+  .pagination .pages{display:flex;gap:4px;}
+  .pagination button{width:30px;height:30px;border:1px solid var(--border);background:#fff;border-radius:6px;cursor:pointer;font-size:13px;}
+  .pagination button.current{background:var(--text);color:#fff;border-color:var(--text);}
+  .pagination button:disabled{opacity:.4;cursor:not-allowed;}
+  .rpp{display:flex;align-items:center;gap:6px;}
+  .rpp select{padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;}
+
+  .modal-bg{position:fixed;inset:0;background:rgba(20,20,25,.45);display:none;align-items:center;justify-content:center;z-index:100;}
+  .modal-bg.open{display:flex;}
+  .modal{background:#fff;border-radius:12px;width:460px;max-width:92vw;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+  .modal-head h3{margin:0;font-size:16px;}
+  .modal-close{border:none;background:none;font-size:18px;cursor:pointer;color:var(--muted);}
+  .modal-body{padding:18px 20px;}
+  .modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:#333;}
+  .field input, .field select, .field textarea{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:7px;font-size:13.5px;font-family:inherit;}
+  .field .hint{font-size:11.5px;color:var(--muted);margin-top:4px;}
+  .check-row{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;}
+
+  .banner{display:flex;gap:10px;align-items:flex-start;background:#eef4ff;border:1px solid #d3e3ff;color:#1d3f8f;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:16px;}
+
+  .roles-wrap{display:grid;grid-template-columns:260px 1fr;gap:18px;}
+  .role-list{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;height:fit-content;}
+  .role-item{display:flex;justify-content:space-between;align-items:center;padding:13px 14px;border-bottom:1px solid #f0f1f3;cursor:pointer;font-size:13.5px;}
+  .role-item:last-child{border-bottom:none;}
+  .role-item.active{background:#eef2ff;}
+  .role-item .cnt{color:var(--muted);font-size:12px;}
+  .perm-group{margin-bottom:18px;}
+  .perm-group h4{font-size:12.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);margin:0 0 10px;}
+  .perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;}
+  .perm-item{display:flex;align-items:center;gap:8px;font-size:13.5px;padding:6px 0;}
+
+  .int-tabs{display:flex;gap:6px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+  .int-tab{padding:10px 14px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;}
+  .int-tab.active{color:var(--text);border-bottom-color:var(--blue);}
+  .int-pane{display:none;}
+  .int-pane.active{display:block;}
+  .kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f1f3;font-size:13.5px;}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--muted);}
+  .masked{font-family:monospace;letter-spacing:1px;}
+
+  .checkbox{width:16px;height:16px;}
+  .empty-note{color:var(--muted);font-size:13px;padding:20px 0;text-align:center;}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;z-index:200;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Administration</h1>
+  <div class="search"><input type="text" placeholder="Search plants, work orders, opportunities..."></div>
+  <div class="topbar-right">
+    <select class="tenant-select"><option>Kariba Solar Services</option><option>Zamsun Power Ltd</option><option>Copperbelt Energy Co-op</option></select>
+    <div class="bell">🔔<span class="dot"></span></div>
+    <div class="avatar">DT</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="users">Users</button>
+  <button class="tab-btn" data-tab="roles">Roles &amp; Permissions</button>
+  <button class="tab-btn" data-tab="audit">Audit Log</button>
+  <button class="tab-btn" data-tab="integrations">Integrations</button>
+</div>
+
+<!-- OVERVIEW -->
+<div class="page active" id="page-overview">
+  <div class="card">
+    <div class="card-head"><h2>Tenants</h2></div>
+    <div class="card-body">
+      <div class="row-item"><div><div class="row-title">Kariba Solar Services</div><div class="row-sub">27 plants · 14 users</div></div><span class="pill pill-green"><span class="d"></span>Active</span></div>
+      <div class="row-item"><div><div class="row-title">Zamsun Power Ltd</div><div class="row-sub">8 plants · 6 users</div></div><span class="pill pill-green"><span class="d"></span>Active</span></div>
+      <div class="row-item"><div><div class="row-title">Copperbelt Energy Co-op</div><div class="row-sub">3 plants · 3 users</div></div><span class="pill pill-orange"><span class="d"></span>Trial</span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="card">
+      <div class="card-head"><h2>Users &amp; Roles</h2><a href="#" onclick="goTab('users');return false;">Open →</a></div>
+      <div class="card-body">
+        <div class="row-item"><div class="row-title">14 users</div><span class="pill pill-gray"><span class="d"></span>5 roles</span></div>
+        <div class="row-item"><div class="row-sub">Manage accounts, reset passwords, and control access from one place.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Templates</h2></div>
+      <div class="card-body">
+        <div class="row-item"><div class="row-title">Rooftop C&amp;I survey template</div><span class="pill pill-gray"><span class="d"></span>Survey</span></div>
+        <div class="row-item"><div class="row-title">Standard deployment project template</div><span class="pill pill-gray"><span class="d"></span>Project</span></div>
+        <div class="row-item"><div class="row-title">Commissioning checklist — ground mount</div><span class="pill pill-gray"><span class="d"></span>Commissioning</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;">
+    <div class="card">
+      <div class="card-head"><h2>Integrations</h2><a href="#" onclick="goTab('integrations');return false;">Open →</a></div>
+      <div class="card-body">
+        <div class="row-item"><div class="row-title">SMS gateway</div><span class="pill pill-green"><span class="d"></span>Connected</span></div>
+        <div class="row-item"><div class="row-title">WhatsApp Business API</div><span class="pill pill-green"><span class="d"></span>Connected</span></div>
+        <div class="row-item"><div class="row-title">ZESCO tariff feed</div><span class="pill pill-gray"><span class="d"></span>Not configured</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Audit log</h2><a href="#" onclick="goTab('audit');return false;">Open →</a></div>
+      <div class="card-body">
+        <div class="row-item"><div><div class="row-title">System · Login</div><div class="row-sub">2 Aug 2026, 13:37</div></div></div>
+        <div class="row-item"><div><div class="row-title">System · Update User Role</div><div class="row-sub">2 Aug 2026, 13:01</div></div></div>
+        <div class="row-item"><div><div class="row-title">System · Register</div><div class="row-sub">2 Aug 2026, 13:01</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USERS -->
+<div class="page" id="page-users">
+  <div class="section-head">
+    <div>
+      <h2>Users</h2>
+      <div class="section-sub">14 users across 5 roles</div>
+    </div>
+    <div class="btn-row">
+      <div class="kebab-wrap">
+        <button class="btn" onclick="toggleMenu('exportMenu')">Export ▾</button>
+        <div class="menu" id="exportMenu">
+          <button onclick="exportUsers('xlsx')">📊 Export to Excel</button>
+          <button onclick="exportUsers('pdf')">📄 Export to PDF</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('createUserModal')">+ Create user</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body" style="padding-top:14px;">
+      <div class="toolbar">
+        <input type="text" id="userSearch" placeholder="Search by name or email" oninput="renderUsers()">
+        <select id="roleFilter" onchange="renderUsers()">
+          <option value="">All roles</option>
+          <option>Admin</option><option>Design Engineer</option><option>Project Manager</option><option>Sales</option><option>User</option>
+        </select>
+        <select id="statusFilter" onchange="renderUsers()">
+          <option value="">All statuses</option><option>Active</option><option>Disabled</option>
+        </select>
+      </div>
+      <table>
+        <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Last login</th><th style="text-align:right;">Actions</th></tr></thead>
+        <tbody id="usersTbody"></tbody>
+      </table>
+      <div class="pagination" id="usersPagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROLES & PERMISSIONS -->
+<div class="page" id="page-roles">
+  <div class="section-head">
+    <div>
+      <h2>Roles &amp; Permissions</h2>
+      <div class="section-sub">All users can view roles here; only Admins can edit permissions.</div>
+    </div>
+    <button class="btn" onclick="openModal('newRoleModal')">+ New role</button>
+  </div>
+
+  <div class="banner" id="viewOnlyBanner">👁 You're viewing as <b>Admin</b>. <a href="#" onclick="toggleViewMode();return false;" id="viewModeToggle">Switch to read-only preview</a></div>
+
+  <div class="roles-wrap">
+    <div class="role-list" id="roleList"></div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-head">
+        <h2 id="roleTitle">Admin</h2>
+        <button class="btn btn-primary btn-sm" id="saveRoleBtn" onclick="saveRole()">Save changes</button>
+      </div>
+      <div class="card-body" style="padding-top:14px;">
+        <div class="perm-group">
+          <h4>Page access</h4>
+          <div class="perm-grid" id="pageAccessGrid"></div>
+        </div>
+        <div class="perm-group">
+          <h4>Task permissions</h4>
+          <div class="perm-grid" id="taskPermGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUDIT LOG -->
+<div class="page" id="page-audit">
+  <div class="section-head">
+    <div>
+      <h2>Audit Log — Users</h2>
+      <div class="section-sub">Every account and permission change, in order.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-sm" onclick="exportAudit('xlsx')">📊 Excel</button>
+      <button class="btn btn-sm" onclick="exportAudit('pdf')">📄 PDF</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="padding-top:14px;">
+      <div class="toolbar">
+        <input type="text" id="auditSearch" placeholder="Search user or action" oninput="renderAudit()">
+        <select id="auditAction" onchange="renderAudit()">
+          <option value="">All actions</option>
+          <option>Login</option><option>Register</option><option>Update User Role</option><option>Disable User</option><option>Reset Password</option><option>Change Password</option>
+        </select>
+        <input type="date" id="auditFrom" onchange="renderAudit()">
+        <span style="color:var(--muted);font-size:13px;">to</span>
+        <input type="date" id="auditTo" onchange="renderAudit()">
+      </div>
+      <table>
+        <thead><tr><th>Actor</th><th>Action</th><th>Details</th><th>Timestamp</th><th style="text-align:right;">Actions</th></tr></thead>
+        <tbody id="auditTbody"></tbody>
+      </table>
+      <div class="pagination" id="auditPagination"></div>
+    </div>
+  </div>
+</div>
+
+<!-- INTEGRATIONS -->
+<div class="page" id="page-integrations">
+  <div class="section-head">
+    <div>
+      <h2>Integrations</h2>
+      <div class="section-sub">Connect and configure the services this tenant relies on.</div>
+    </div>
+  </div>
+
+  <div class="int-tabs" id="intTabs"></div>
+  <div id="intPanes"></div>
+</div>
+
+<div class="modal-bg" id="createUserModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Create user</h3><button class="modal-close" onclick="closeModal('createUserModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Full name</label><input type="text" id="newUserName" placeholder="e.g. Chipo Banda"></div>
+      <div class="field"><label>Email address</label><input type="text" id="newUserEmail" placeholder="name@company.com"></div>
+      <div class="field"><label>Assign role</label>
+        <select id="newUserRole">
+          <option>Admin</option><option>Design Engineer</option><option>Project Manager</option><option>Sales</option><option selected>User</option>
+        </select>
+        <div class="hint">Role determines which pages and actions this user can access.</div>
+      </div>
+      <div class="field"><label>Tenant</label>
+        <select id="newUserTenant"><option>Kariba Solar Services</option><option>Zamsun Power Ltd</option><option>Copperbelt Energy Co-op</option></select>
+      </div>
+      <div class="check-row"><input type="checkbox" class="checkbox" checked id="sendInvite"><label for="sendInvite" style="margin:0;font-weight:400;">Send invite email with password setup link</label></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('createUserModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()">Create user</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="viewUserModal">
+  <div class="modal">
+    <div class="modal-head"><h3>User details</h3><button class="modal-close" onclick="closeModal('viewUserModal')">✕</button></div>
+    <div class="modal-body" id="viewUserBody"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('viewUserModal')">Close</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="passwordModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="passwordModalTitle">Reset password</h3><button class="modal-close" onclick="closeModal('passwordModal')">✕</button></div>
+    <div class="modal-body" id="passwordModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('passwordModal')">Cancel</button>
+      <button class="btn btn-primary" id="passwordConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="disableModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="disableModalTitle">Disable user</h3><button class="modal-close" onclick="closeModal('disableModal')">✕</button></div>
+    <div class="modal-body"><p id="disableModalText" style="font-size:13.5px;"></p></div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('disableModal')">Cancel</button>
+      <button class="btn btn-danger" id="disableConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="newRoleModal">
+  <div class="modal">
+    <div class="modal-head"><h3>New role</h3><button class="modal-close" onclick="closeModal('newRoleModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Role name</label><input type="text" id="newRoleName" placeholder="e.g. Field Technician"></div>
+      <div class="field"><label>Description</label><textarea rows="2" id="newRoleDesc" placeholder="Short description of this role"></textarea></div>
+      <div class="hint">You can assign page access and task permissions after creating the role.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('newRoleModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createRole()">Create role</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="auditDetailModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Audit entry</h3><button class="modal-close" onclick="closeModal('auditDetailModal')">✕</button></div>
+    <div class="modal-body" id="auditDetailBody"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('auditDetailModal')">Close</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- shared helpers ---------- */
+function goTab(tab){document.querySelector('.tab-btn[data-tab="'+tab+'"]').click();}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-'+btn.dataset.tab).classList.add('active');
+  });
+});
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function toggleMenu(id){
+  document.querySelectorAll('.menu').forEach(m=>{if(m.id!==id)m.classList.remove('open');});
+  document.getElementById(id).classList.toggle('open');
+}
+document.addEventListener('click',(e)=>{
+  if(!e.target.closest('.kebab-wrap')){document.querySelectorAll('.menu').forEach(m=>m.classList.remove('open'));}
+});
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ---------- USERS DATA ---------- */
+let users=[
+ {id:1,name:'Deploy Test',email:'deploy-test@sencecon.dev',role:'Admin',status:'Active',last:'2 Aug 2026, 13:37'},
+ {id:2,name:'Design Engineer',email:'design@sencecon.dev',role:'Design Engineer',status:'Active',last:'2 Aug 2026, 09:12'},
+ {id:3,name:'Prod Smoke Test',email:'prodsmoketest@example.com',role:'User',status:'Active',last:'1 Aug 2026, 18:44'},
+ {id:4,name:'Project Manager',email:'project@sencecon.dev',role:'Project Manager',status:'Active',last:'2 Aug 2026, 08:03'},
+ {id:5,name:'Sales',email:'sales@sencecon.dev',role:'Sales',status:'Active',last:'31 Jul 2026, 16:20'},
+ {id:6,name:'Test User',email:'test@sencecon.dev',role:'User',status:'Disabled',last:'20 Jul 2026, 11:05'},
+ {id:7,name:'Mwansa Chileshe',email:'mwansa.c@sencecon.dev',role:'Design Engineer',status:'Active',last:'29 Jul 2026, 14:40'},
+ {id:8,name:'Bupe Mumba',email:'bupe.m@sencecon.dev',role:'Sales',status:'Active',last:'28 Jul 2026, 10:11'},
+ {id:9,name:'Kunda Phiri',email:'kunda.p@sencecon.dev',role:'Project Manager',status:'Active',last:'27 Jul 2026, 09:52'},
+ {id:10,name:'Natasha Zulu',email:'natasha.z@sencecon.dev',role:'User',status:'Active',last:'26 Jul 2026, 15:30'},
+ {id:11,name:'Given Lungu',email:'given.l@sencecon.dev',role:'Admin',status:'Active',last:'25 Jul 2026, 12:00'},
+ {id:12,name:'Chanda Mulenga',email:'chanda.m@sencecon.dev',role:'Design Engineer',status:'Disabled',last:'10 Jul 2026, 08:15'},
+ {id:13,name:'Precious Banda',email:'precious.b@sencecon.dev',role:'Sales',status:'Active',last:'22 Jul 2026, 17:05'},
+ {id:14,name:'Emmanuel Tembo',email:'emmanuel.t@sencecon.dev',role:'User',status:'Active',last:'21 Jul 2026, 13:47'},
+];
+let userPage=1, userPageSize=6;
+
+function filteredUsers(){
+  const q=(document.getElementById('userSearch').value||'').toLowerCase();
+  const r=document.getElementById('roleFilter').value;
+  const s=document.getElementById('statusFilter').value;
+  return users.filter(u=>
+    (!q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)) &&
+    (!r || u.role===r) && (!s || u.status===s)
+  );
+}
+
+function renderUsers(){
+  const list=filteredUsers();
+  const totalPages=Math.max(1,Math.ceil(list.length/userPageSize));
+  if(userPage>totalPages)userPage=totalPages;
+  const start=(userPage-1)*userPageSize;
+  const pageItems=list.slice(start,start+userPageSize);
+  const tbody=document.getElementById('usersTbody');
+  tbody.innerHTML = pageItems.length ? pageItems.map(u=>`
+    <tr>
+      <td class="name-cell"><div class="n">${u.name}</div><div class="e">${u.email}</div></td>
+      <td><span class="role-badge">${u.role} ▾</span></td>
+      <td>${u.status==='Active' ? '<span class="pill pill-green"><span class="d"></span>Active</span>' : '<span class="pill pill-red"><span class="d"></span>Disabled</span>'}</td>
+      <td style="color:var(--muted);">${u.last}</td>
+      <td style="text-align:right;">
+        <div class="kebab-wrap">
+          <button class="kebab" onclick="toggleMenu('m${u.id}')">⋮</button>
+          <div class="menu" id="m${u.id}">
+            <button onclick="viewUser(${u.id})">👤 View details</button>
+            <button onclick="openPasswordModal(${u.id},'change')">🔑 Change password</button>
+            <button onclick="openPasswordModal(${u.id},'reset')">✉️ Reset password</button>
+            <hr>
+            <button class="danger" onclick="openDisableModal(${u.id})">${u.status==='Active'?'🚫 Disable user':'✅ Enable user'}</button>
+          </div>
+        </div>
+      </td>
+    </tr>`).join('') : `<tr><td colspan="5"><div class="empty-note">No users match your filters.</div></td></tr>`;
+
+  const p=document.getElementById('usersPagination');
+  let pageBtns='';
+  for(let i=1;i<=totalPages;i++){pageBtns+=`<button class="${i===userPage?'current':''}" onclick="userPage=${i};renderUsers()">${i}</button>`;}
+  p.innerHTML=`
+    <div>Showing ${list.length?start+1:0}-${Math.min(start+userPageSize,list.length)} of ${list.length}</div>
+    <div class="pages">
+      <button ${userPage===1?'disabled':''} onclick="userPage--;renderUsers()">‹</button>
+      ${pageBtns}
+      <button ${userPage===totalPages?'disabled':''} onclick="userPage++;renderUsers()">›</button>
+    </div>
+    <div class="rpp">Rows per page
+      <select onchange="userPageSize=parseInt(this.value);userPage=1;renderUsers()">
+        <option value="6" ${userPageSize===6?'selected':''}>6</option>
+        <option value="10" ${userPageSize===10?'selected':''}>10</option>
+        <option value="25" ${userPageSize===25?'selected':''}>25</option>
+      </select>
+    </div>`;
+}
+
+function createUser(){
+  const name=document.getElementById('newUserName').value.trim();
+  const email=document.getElementById('newUserEmail').value.trim();
+  const role=document.getElementById('newUserRole').value;
+  if(!name||!email){toast('Name and email are required');return;}
+  const id=Math.max(...users.map(u=>u.id))+1;
+  users.unshift({id,name,email,role,status:'Active',last:'—'});
+  auditLog.unshift({id:++auditIdSeq,actor:'System',action:'Register',details:`Created user ${name} (${role})`,ts:nowStr(),ip:'—',ua:'—'});
+  closeModal('createUserModal');
+  document.getElementById('newUserName').value='';document.getElementById('newUserEmail').value='';
+  userPage=1;renderUsers();renderAudit();
+  toast('User created');
+}
+
+function viewUser(id){
+  const u=users.find(x=>x.id===id);
+  const roleObj=roles.find(r=>r.name===u.role);
+  const pages=roleObj?Object.entries(roleObj.pages).filter(([k,v])=>v).map(([k])=>k):[];
+  document.getElementById('viewUserBody').innerHTML=`
+    <div class="field"><label>Name</label><div>${u.name}</div></div>
+    <div class="field"><label>Email</label><div>${u.email}</div></div>
+    <div class="field"><label>Role</label><div><span class="role-badge">${u.role}</span></div></div>
+    <div class="field"><label>Status</label><div>${u.status==='Active'?'<span class="pill pill-green"><span class="d"></span>Active</span>':'<span class="pill pill-red"><span class="d"></span>Disabled</span>'}</div></div>
+    <div class="field"><label>Last login</label><div>${u.last}</div></div>
+    <div class="field"><label>Page access (via role)</label><div style="font-size:13px;color:var(--muted);">${pages.join(', ')||'None'}</div></div>
+    <div class="field"><label>Recent activity</label>
+      <div style="font-size:13px;color:var(--muted);">${auditLog.filter(a=>a.details.includes(u.name)).slice(0,3).map(a=>a.action+' — '+a.ts).join('<br>')||'No recent activity'}</div>
+    </div>`;
+  openModal('viewUserModal');
+}
+
+let pwTarget=null;
+function openPasswordModal(id,mode){
+  pwTarget=id;
+  const u=users.find(x=>x.id===id);
+  const title=mode==='change'?'Change password':'Reset password';
+  document.getElementById('passwordModalTitle').textContent=title+' — '+u.name;
+  if(mode==='change'){
+    document.getElementById('passwordModalBody').innerHTML=`
+      <div class="field"><label>New password</label><input type="password" id="newPw" placeholder="Enter new password"></div>
+      <div class="field"><label>Confirm password</label><input type="password" id="confirmPw" placeholder="Confirm new password"></div>
+      <div class="hint">The user will be signed out of all active sessions.</div>`;
+    document.getElementById('passwordConfirmBtn').onclick=()=>{
+      auditLog.unshift({id:++auditIdSeq,actor:'Admin',action:'Change Password',details:`Changed password for ${u.name}`,ts:nowStr(),ip:'—',ua:'—'});
+      closeModal('passwordModal');renderAudit();toast('Password changed');
+    };
+  } else {
+    document.getElementById('passwordModalBody').innerHTML=`
+      <p style="font-size:13.5px;">Send a password reset link to <b>${u.email}</b>? The link expires in 24 hours.</p>`;
+    document.getElementById('passwordConfirmBtn').onclick=()=>{
+      auditLog.unshift({id:++auditIdSeq,actor:'Admin',action:'Reset Password',details:`Sent reset link to ${u.name}`,ts:nowStr(),ip:'—',ua:'—'});
+      closeModal('passwordModal');renderAudit();toast('Reset link sent');
+    };
+  }
+  openModal('passwordModal');
+}
+
+let disableTarget=null;
+function openDisableModal(id){
+  disableTarget=id;
+  const u=users.find(x=>x.id===id);
+  const disabling=u.status==='Active';
+  document.getElementById('disableModalTitle').textContent=disabling?'Disable user':'Enable user';
+  document.getElementById('disableModalText').textContent=disabling
+    ? `${u.name} will lose access immediately. They can be re-enabled at any time.`
+    : `${u.name} will regain access immediately.`;
+  const btn=document.getElementById('disableConfirmBtn');
+  btn.textContent=disabling?'Disable user':'Enable user';
+  btn.onclick=()=>{
+    u.status=disabling?'Disabled':'Active';
+    auditLog.unshift({id:++auditIdSeq,actor:'Admin',action:disabling?'Disable User':'Enable User',details:`${disabling?'Disabled':'Enabled'} ${u.name}`,ts:nowStr(),ip:'—',ua:'—'});
+    closeModal('disableModal');renderUsers();renderAudit();toast(disabling?'User disabled':'User enabled');
+  };
+  openModal('disableModal');
+}
+
+function exportUsers(type){
+  const rows=filteredUsers().map(u=>({Name:u.name,Email:u.email,Role:u.role,Status:u.status,'Last Login':u.last}));
+  if(type==='xlsx'){
+    const ws=XLSX.utils.json_to_sheet(rows);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Users');
+    XLSX.writeFile(wb,'users.xlsx');
+  } else {
+    const doc=new jspdf.jsPDF();
+    doc.text('Users',14,14);
+    doc.autoTable({startY:20,head:[['Name','Email','Role','Status','Last Login']],body:rows.map(r=>Object.values(r))});
+    doc.save('users.pdf');
+  }
+  toggleMenu('exportMenu');
+}
+
+/* ---------- ROLES & PERMISSIONS ---------- */
+const pageList=['Dashboard','Plants','Work Orders','Opportunities','Users','Roles & Permissions','Audit Log','Integrations','Templates','Tenants'];
+const taskList=['Create user','Edit user','Disable/enable user','Reset password','Change password','Export users','Create role','Edit permissions','Manage integrations','Create template','Edit template','Manage tenants'];
+
+function pickPages(arr){const o={};pageList.forEach(k=>o[k]=arr.includes(k));return o;}
+function pickTasks(arr){const o={};taskList.forEach(k=>o[k]=arr.includes(k));return o;}
+
+let roles=[
+ {name:'Admin',users:2,pages:pickPages(pageList),tasks:pickTasks(taskList)},
+ {name:'Design Engineer',users:3,pages:pickPages(['Dashboard','Plants','Work Orders','Templates']),tasks:pickTasks(['Create template','Edit template'])},
+ {name:'Project Manager',users:2,pages:pickPages(['Dashboard','Plants','Work Orders','Opportunities','Templates']),tasks:pickTasks(['Create template','Edit template','Export users'])},
+ {name:'Sales',users:3,pages:pickPages(['Dashboard','Opportunities']),tasks:pickTasks([])},
+ {name:'User',users:4,pages:pickPages(['Dashboard','Roles & Permissions']),tasks:pickTasks([])},
+];
+
+let selectedRole='Admin';
+let readOnlyMode=false;
+
+function renderRoles(){
+  const list=document.getElementById('roleList');
+  list.innerHTML=roles.map(r=>`
+    <div class="role-item ${r.name===selectedRole?'active':''}" onclick="selectRole('${r.name}')">
+      <span>${r.name}</span><span class="cnt">${r.users} users</span>
+    </div>`).join('');
+  const role=roles.find(r=>r.name===selectedRole);
+  document.getElementById('roleTitle').textContent=role.name;
+  document.getElementById('pageAccessGrid').innerHTML=pageList.map(p=>`
+    <label class="perm-item"><input type="checkbox" class="checkbox" ${role.pages[p]?'checked':''} ${readOnlyMode?'disabled':''} onchange="setPagePerm('${p}',this.checked)" data-page="${p}">${p}</label>`).join('');
+  document.getElementById('taskPermGrid').innerHTML=taskList.map(t=>`
+    <label class="perm-item"><input type="checkbox" class="checkbox" ${role.tasks[t]?'checked':''} ${readOnlyMode?'disabled':''} onchange="setTaskPerm('${t}',this.checked)" data-task="${t}">${t}</label>`).join('');
+  document.getElementById('saveRoleBtn').style.display=readOnlyMode?'none':'inline-block';
+}
+function setPagePerm(page,checked){const role=roles.find(r=>r.name===selectedRole);role.pages[page]=checked;}
+function setTaskPerm(task,checked){const role=roles.find(r=>r.name===selectedRole);role.tasks[task]=checked;}
+function selectRole(name){selectedRole=name;renderRoles();}
+function saveRole(){
+  auditLog.unshift({id:++auditIdSeq,actor:'Admin',action:'Update User Role',details:`Updated permissions for ${selectedRole}`,ts:nowStr(),ip:'—',ua:'—'});
+  renderAudit();toast('Permissions saved');
+}
+function toggleViewMode(){
+  readOnlyMode=!readOnlyMode;
+  document.getElementById('viewOnlyBanner').innerHTML = readOnlyMode
+    ? `👁 You're previewing as a standard <b>User</b> (read-only). <a href="#" onclick="toggleViewMode();return false;">Switch back to Admin</a>`
+    : `👁 You're viewing as <b>Admin</b>. <a href="#" onclick="toggleViewMode();return false;">Switch to read-only preview</a>`;
+  renderRoles();
+}
+function createRole(){
+  const name=document.getElementById('newRoleName').value.trim();
+  if(!name){toast('Role name required');return;}
+  roles.push({name,users:0,pages:pickPages(['Dashboard']),tasks:pickTasks([])});
+  selectedRole=name;
+  closeModal('newRoleModal');
+  document.getElementById('newRoleName').value='';document.getElementById('newRoleDesc').value='';
+  renderRoles();toast('Role created');
+}
+
+/* ---------- AUDIT LOG ---------- */
+let auditLog=[
+ {actor:'System',action:'Login',details:'deploy-test@sencecon.dev signed in',ts:'2 Aug 2026, 13:37',ip:'102.130.44.18',ua:'Chrome 127 · Windows'},
+ {actor:'System',action:'Login',details:'project@sencecon.dev signed in',ts:'2 Aug 2026, 13:12',ip:'102.130.44.22',ua:'Safari 17 · macOS'},
+ {actor:'System',action:'Login',details:'sales@sencecon.dev signed in',ts:'2 Aug 2026, 13:11',ip:'102.130.44.09',ua:'Chrome 127 · Android'},
+ {actor:'System',action:'Login',details:'design@sencecon.dev signed in',ts:'2 Aug 2026, 13:03',ip:'102.130.44.31',ua:'Edge 126 · Windows'},
+ {actor:'System',action:'Update User Role',details:'Test User role changed to User',ts:'2 Aug 2026, 13:01',ip:'102.130.44.18',ua:'Chrome 127 · Windows'},
+ {actor:'System',action:'Register',details:'Created user Test User',ts:'2 Aug 2026, 13:01',ip:'102.130.44.18',ua:'Chrome 127 · Windows'},
+ {actor:'System',action:'Login',details:'deploy-test@sencecon.dev signed in',ts:'2 Aug 2026, 12:57',ip:'102.130.44.18',ua:'Chrome 127 · Windows'},
+ {actor:'System',action:'Login',details:'design@sencecon.dev signed in',ts:'2 Aug 2026, 12:57',ip:'102.130.44.31',ua:'Edge 126 · Windows'},
+ {actor:'System',action:'Register',details:'Created user Design Engineer',ts:'2 Aug 2026, 12:51',ip:'102.130.44.18',ua:'Chrome 127 · Windows'},
+ {actor:'System',action:'Login',details:'deploy-test@sencecon.dev signed in',ts:'2 Aug 2026, 12:46',ip:'102.130.44.18',ua:'Chrome 127 · Windows'},
+ {actor:'System',action:'Register',details:'Created user Deploy Test',ts:'2 Aug 2026, 12:45',ip:'102.130.44.18',ua:'Chrome 127 · Windows'},
+];
+auditLog.forEach((e,i)=>e.id=i+1);
+let auditIdSeq=auditLog.length;
+let auditPage=1, auditPageSize=8;
+function nowStr(){const d=new Date();return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+', '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+
+function filteredAudit(){
+  const q=(document.getElementById('auditSearch').value||'').toLowerCase();
+  const a=document.getElementById('auditAction').value;
+  return auditLog.filter(e=>
+    (!q || e.details.toLowerCase().includes(q) || e.actor.toLowerCase().includes(q)) &&
+    (!a || e.action===a)
+  );
+}
+function renderAudit(){
+  const list=filteredAudit();
+  const totalPages=Math.max(1,Math.ceil(list.length/auditPageSize));
+  if(auditPage>totalPages)auditPage=totalPages;
+  const start=(auditPage-1)*auditPageSize;
+  const items=list.slice(start,start+auditPageSize);
+  document.getElementById('auditTbody').innerHTML = items.length ? items.map(e=>`
+    <tr>
+      <td>${e.actor}</td>
+      <td><span class="pill pill-gray"><span class="d"></span>${e.action}</span></td>
+      <td style="color:var(--muted);">${e.details}</td>
+      <td style="color:var(--muted);">${e.ts}</td>
+      <td style="text-align:right;"><button class="btn btn-sm" onclick="viewAuditEntry(${e.id})">View</button></td>
+    </tr>
+  `).join('') : `<tr><td colspan="5"><div class="empty-note">No matching entries.</div></td></tr>`;
+  let pageBtns='';
+  for(let i=1;i<=totalPages;i++){pageBtns+=`<button class="${i===auditPage?'current':''}" onclick="auditPage=${i};renderAudit()">${i}</button>`;}
+  document.getElementById('auditPagination').innerHTML=`
+    <div>Showing ${list.length?start+1:0}-${Math.min(start+auditPageSize,list.length)} of ${list.length}</div>
+    <div class="pages">
+      <button ${auditPage===1?'disabled':''} onclick="auditPage--;renderAudit()">‹</button>
+      ${pageBtns}
+      <button ${auditPage===totalPages?'disabled':''} onclick="auditPage++;renderAudit()">›</button>
+    </div><div></div>`;
+}
+function viewAuditEntry(id){
+  const e=auditLog.find(x=>x.id===id);
+  if(!e)return;
+  document.getElementById('auditDetailBody').innerHTML=`
+    <div class="field"><label>Actor</label><div>${e.actor}</div></div>
+    <div class="field"><label>Action</label><div><span class="pill pill-gray"><span class="d"></span>${e.action}</span></div></div>
+    <div class="field"><label>Details</label><div>${e.details}</div></div>
+    <div class="field"><label>Timestamp</label><div>${e.ts}</div></div>
+    <div class="field"><label>IP address</label><div>${e.ip||'—'}</div></div>
+    <div class="field"><label>Device</label><div>${e.ua||'—'}</div></div>
+    <div class="field"><label>Entry ID</label><div style="color:var(--muted);">#${String(e.id).padStart(6,'0')}</div></div>`;
+  openModal('auditDetailModal');
+}
+function exportAudit(type){
+  const rows=filteredAudit().map(e=>({Actor:e.actor,Action:e.action,Details:e.details,Timestamp:e.ts}));
+  if(type==='xlsx'){
+    const ws=XLSX.utils.json_to_sheet(rows);
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Audit Log');
+    XLSX.writeFile(wb,'audit-log.xlsx');
+  } else {
+    const doc=new jspdf.jsPDF();
+    doc.text('Audit Log — Users',14,14);
+    doc.autoTable({startY:20,head:[['Actor','Action','Details','Timestamp']],body:rows.map(r=>Object.values(r))});
+    doc.save('audit-log.pdf');
+  }
+}
+
+/* ---------- INTEGRATIONS ---------- */
+const integrations=[
+ {key:'sms',name:'SMS gateway',status:'Connected',fields:[
+   {label:'Provider',value:'Africa\'s Talking'},
+   {label:'Sender ID',value:'KaribaSolar'},
+   {label:'API key',value:'••••••••••••4f2a',masked:true},
+   {label:'Last synced',value:'2 Aug 2026, 09:00'}]},
+ {key:'wa',name:'WhatsApp Business API',status:'Connected',fields:[
+   {label:'Business account ID',value:'109384720234'},
+   {label:'Phone number',value:'+260 97 123 4567'},
+   {label:'Access token',value:'••••••••••••9c1e',masked:true},
+   {label:'Last synced',value:'1 Aug 2026, 21:14'}]},
+ {key:'weather',name:'Weather data feed',status:'Connected',fields:[
+   {label:'Provider',value:'OpenWeather'},
+   {label:'API key',value:'••••••••••••7b02',masked:true},
+   {label:'Refresh interval',value:'30 minutes'},
+   {label:'Last synced',value:'2 Aug 2026, 13:00'}]},
+ {key:'zesco',name:'ZESCO tariff feed',status:'Not configured',fields:[
+   {label:'Endpoint URL',value:''},
+   {label:'API key',value:''},
+   {label:'Tariff schedule',value:''}]},
+];
+let activeInt='sms';
+function renderIntegrations(){
+  document.getElementById('intTabs').innerHTML=integrations.map(i=>`
+    <button class="int-tab ${i.key===activeInt?'active':''}" onclick="selectInt('${i.key}')">${i.name}</button>`).join('');
+  const panes=integrations.map(i=>{
+    const isConfigured=i.status==='Connected';
+    return `<div class="int-pane ${i.key===activeInt?'active':''}" id="int-${i.key}">
+      <div class="card">
+        <div class="card-head">
+          <h2>${i.name}</h2>
+          <span class="pill ${isConfigured?'pill-green':'pill-gray'}"><span class="d"></span>${i.status}</span>
+        </div>
+        <div class="card-body" style="padding-top:14px;">
+          ${i.fields.map((f,idx)=>`
+            <div class="field">
+              <label>${f.label}</label>
+              <input type="${f.masked?'password':'text'}" value="${f.value}" placeholder="${f.masked?'Enter API key':'Not set'}">
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveIntegration('${i.key}')">Save changes</button>
+        <button class="btn" onclick="testIntegration('${i.key}')">Test connection</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('intPanes').innerHTML=panes;
+}
+function selectInt(key){activeInt=key;renderIntegrations();}
+function saveIntegration(key){
+  const i=integrations.find(x=>x.key===key);
+  i.status='Connected';
+  activeInt=key;
+  renderIntegrations();
+  toast(i.name+' settings saved');
+}
+function testIntegration(key){
+  toast('Testing connection…');
+  setTimeout(()=>toast('Connection successful'),700);
+}
+
+/* ---------- init ---------- */
+renderUsers();
+renderRoles();
+renderAudit();
+renderIntegrations();
+</script>
+</body>
+</html>

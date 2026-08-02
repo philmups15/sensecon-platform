@@ -184,6 +184,26 @@ export const changePassword = (currentPassword, newPassword) =>
   request('/api/users/me/password', { method: 'PUT', body: { currentPassword, newPassword } });
 export const updateUserRole = (id, role) => request(`/api/users/${id}/role`, { method: 'PUT', body: { role } });
 
+// TODO(Phase 2 — Sencecon.API): no backend endpoint exists yet for admin-driven
+// status changes. This will 404 until the API adds PUT /api/users/{id}/status
+// (or an equivalent field on the user update). Call it for real rather than
+// faking success locally, so the UI surfaces the failure honestly today and
+// starts working the moment the endpoint ships.
+export const setUserStatus = (id, enabled) =>
+  request(`/api/users/${id}/status`, { method: 'PUT', body: { enabled } });
+
+// TODO(Phase 2 — Sencecon.API): no backend endpoint exists yet. Distinct from
+// changePassword() above, which requires the caller's own current password and
+// only works for your own account — this is an admin setting *someone else's*
+// password directly. Will 404 until the API adds it.
+export const adminSetPassword = (id, newPassword) =>
+  request(`/api/users/${id}/password`, { method: 'PUT', body: { newPassword } });
+
+// TODO(Phase 2 — Sencecon.API): no backend endpoint or email flow exists yet
+// for sending a password-reset link. Will 404 until the API adds it.
+export const sendPasswordReset = (id) =>
+  request(`/api/users/${id}/password-reset`, { method: 'POST' });
+
 // ---- Audit log ----
 export const getAuditLog = () => request('/api/auditlog');
 
@@ -447,7 +467,7 @@ export const ALL_ROLES = ['Admin', 'User', 'Sales', 'ProjectManager', 'DesignEng
 // Mirrors the backend's Sencecon.API/Authorization/Roles.cs ModuleAccess matrix exactly.
 // 'read' gates whether a role can see the module/screen at all; 'write' gates
 // create/edit/delete/stage-change controls within a module the role can already read.
-const MODULE_ACCESS = {
+export const MODULE_ACCESS = {
   opportunities: { read: ['Admin', 'User', 'Sales', 'ProjectManager'], write: ['Admin', 'Sales'] },
   surveys: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
   designs: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
