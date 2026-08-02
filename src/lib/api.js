@@ -100,6 +100,11 @@ export async function register(email, password, displayName) {
   return result;
 }
 
+// Same endpoint as register(), but for an admin creating another user's account —
+// it must NOT store the returned token, or it would replace the admin's own session.
+export const adminCreateUser = (email, password, displayName) =>
+  request('/api/auth/register', { method: 'POST', body: { email, password, displayName } });
+
 // ---- Plants ----
 export const getPlants = () => request('/api/plants');
 export const getPlant = (id) => request(`/api/plants/${id}`);
