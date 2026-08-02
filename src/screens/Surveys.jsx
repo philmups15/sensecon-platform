@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
-import { getSurveys, toSurveyView } from '../lib/api';
+import { getSurveys, toSurveyView, canAccess } from '../lib/api';
 import { surveyPhotos, measurements, obstructions } from '../lib/mockData';
 
-export default function Surveys() {
+export default function Surveys({ currentUser }) {
+  const canWrite = canAccess(currentUser?.role, 'surveys', 'write');
+
   const [surveys, setSurveys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -88,9 +90,11 @@ export default function Surveys() {
             ))}
           </div>
         </div>
-        <button style={{ marginTop: 20, padding: '10px 18px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-          Sign off survey
-        </button>
+        {canWrite && (
+          <button style={{ marginTop: 20, padding: '10px 18px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            Sign off survey
+          </button>
+        )}
       </div>
     </div>
   );

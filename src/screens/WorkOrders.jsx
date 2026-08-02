@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
-import { getWorkOrders, toWorkOrderView } from '../lib/api';
+import { getWorkOrders, toWorkOrderView, canAccess } from '../lib/api';
 import { woColumnsList, woChecklist, woParts, woDeviations } from '../lib/mockData';
 
-export default function WorkOrders() {
+export default function WorkOrders({ currentUser }) {
+  const canWrite = canAccess(currentUser?.role, 'workOrders', 'write');
+
   const [workOrders, setWorkOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,9 +93,11 @@ export default function WorkOrders() {
             {woDeviations.map((dv, i) => (
               <div key={i} style={{ padding: '9px 12px', background: '#FBF0E2', borderRadius: 8, fontSize: 12.5, color: '#B45309' }}>{dv.note}</div>
             ))}
-            <button style={{ marginTop: 16, padding: '9px 16px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>
-              Sign off & close
-            </button>
+            {canWrite && (
+              <button style={{ marginTop: 16, padding: '9px 16px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>
+                Sign off & close
+              </button>
+            )}
           </div>
         </div>
       </div>
