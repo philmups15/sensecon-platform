@@ -1,16 +1,29 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
-import { getUsers, getAuditLog, toUserView, toAuditLogView } from '../lib/api';
+import { getUsers, getAuditLog, updateUserRole, toUserView, toAuditLogView, USER_ROLE_META, ALL_ROLES } from '../lib/api';
 import { tenants, templates, integrations } from '../lib/mockData';
 
-export default function Admin() {
+const selectStyle = {
+  padding: '5px 8px',
+  border: '1px solid #D2D8DC',
+  borderRadius: 8,
+  fontSize: 12,
+  fontWeight: 600,
+  color: '#334155',
+  background: '#FFFFFF',
+  cursor: 'pointer',
+};
+
+export default function Admin({ currentUser }) {
   const [users, setUsers] = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [auditLoading, setAuditLoading] = useState(true);
   const [error, setError] = useState('');
   const [auditError, setAuditError] = useState('');
+  const [savingId, setSavingId] = useState(null);
+  const [roleError, setRoleError] = useState('');
 
   useEffect(() => {
     getUsers()
@@ -23,6 +36,23 @@ export default function Admin() {
       .catch((err) => setAuditError(err.message || 'Failed to load audit log.'))
       .finally(() => setAuditLoading(false));
   }, []);
+
+  const handleRoleChange = async (user, newRoleKey) => {
+    if (newRoleKey === user.roleKey) return;
+    const previous = users;
+    setSavingId(user.entityId);
+    setRoleError('');
+    const meta = USER_ROLE_META[newRoleKey];
+    setUsers((prev) => prev.map((u) => (u.entityId === user.entityId ? { ...u, roleKey: newRoleKey, role: meta.label, tone: meta.tone } : u)));
+    try {
+      await updateUserRole(user.entityId, newRoleKey);
+    } catch (err) {
+      setUsers(previous);
+      setRoleError(err.message || 'Failed to change role.');
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -41,18 +71,35 @@ export default function Admin() {
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Users & roles</div>
           {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6' }}><Spinner size={14} />Loading…</div>}
           {error && <div style={{ fontSize: 13, color: '#B42318' }}>{error}</div>}
+          {roleError && <div style={{ marginBottom: 8, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{roleError}</div>}
           {!loading && !error && users.length === 0 && (
             <div style={{ fontSize: 13, color: '#9AA0A6' }}>No users registered yet.</div>
           )}
-          {users.map((u) => (
-            <div key={u.entityId} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
-              <div>
-                {u.name}
-                <div style={{ fontSize: 11, color: '#9AA0A6' }}>{u.email}</div>
+          {users.map((u) => {
+            const isSelf = u.entityId === currentUser?.id;
+            return (
+              <div key={u.entityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
+                <div>
+                  {u.name}
+                  <div style={{ fontSize: 11, color: '#9AA0A6' }}>{u.email}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {savingId === u.entityId && <Spinner size={12} />}
+                  <select
+                    value={u.roleKey}
+                    disabled={isSelf || savingId === u.entityId}
+                    onChange={(e) => handleRoleChange(u, e.target.value)}
+                    title={isSelf ? "You can't change your own role." : undefined}
+                    style={{ ...selectStyle, opacity: isSelf || savingId === u.entityId ? 0.6 : 1 }}
+                  >
+                    {ALL_ROLES.map((r) => (
+                      <option key={r} value={r}>{USER_ROLE_META[r].label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <Chip label={u.role} tone={u.tone} />
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Templates</div>

@@ -177,6 +177,7 @@ export const getCurrentUser = () => request('/api/users/me');
 export const updateProfile = (displayName) => request('/api/users/me', { method: 'PUT', body: { displayName } });
 export const changePassword = (currentPassword, newPassword) =>
   request('/api/users/me/password', { method: 'PUT', body: { currentPassword, newPassword } });
+export const updateUserRole = (id, role) => request(`/api/users/${id}/role`, { method: 'PUT', body: { role } });
 
 // ---- Audit log ----
 export const getAuditLog = () => request('/api/auditlog');
@@ -430,7 +431,55 @@ export const NON_CONFORMITY_STATUS_META = {
 export const USER_ROLE_META = {
   User: { label: 'User', tone: 'blue' },
   Admin: { label: 'Admin', tone: 'violet' },
+  Sales: { label: 'Sales', tone: 'green' },
+  ProjectManager: { label: 'Project Manager', tone: 'amber' },
+  DesignEngineer: { label: 'Design Engineer', tone: 'slate' },
 };
+
+// Every role that can log in, for populating the Admin role-change dropdown.
+export const ALL_ROLES = ['Admin', 'User', 'Sales', 'ProjectManager', 'DesignEngineer'];
+
+// Mirrors the backend's Sencecon.API/Authorization/Roles.cs ModuleAccess matrix exactly.
+// 'read' gates whether a role can see the module/screen at all; 'write' gates
+// create/edit/delete/stage-change controls within a module the role can already read.
+const MODULE_ACCESS = {
+  opportunities: { read: ['Admin', 'User', 'Sales', 'ProjectManager'], write: ['Admin', 'Sales'] },
+  surveys: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
+  designs: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
+  bomItems: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
+  projects: { read: ['Admin', 'User', 'Sales', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'ProjectManager'] },
+  plants: { read: ['Admin', 'User', 'ProjectManager'], write: ['Admin', 'ProjectManager'] },
+  workOrders: { read: ['Admin', 'User', 'ProjectManager'], write: ['Admin', 'ProjectManager'] },
+  nonConformities: { read: ['Admin', 'User', 'ProjectManager'], write: ['Admin', 'ProjectManager'] },
+  reports: { read: ['Admin', 'User', 'Sales', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'ProjectManager'] },
+};
+
+export function canAccess(role, module, mode = 'read') {
+  return MODULE_ACCESS[module]?.[mode]?.includes(role) ?? false;
+}
+
+// Screen key -> module(s) it depends on. A screen that reads from more than one
+// module (e.g. the customer Portal shows Plants + Work orders) is visible only
+// if the role can read at least one of them.
+const SCREEN_MODULES = {
+  opportunities: ['opportunities'],
+  surveys: ['surveys'],
+  design: ['designs'],
+  bom: ['bomItems'],
+  projects: ['projects'],
+  plants: ['plants'],
+  workorders: ['workOrders'],
+  commissioning: ['nonConformities'],
+  reports: ['reports'],
+  portal: ['plants', 'workOrders'],
+};
+
+export function canViewScreen(role, screenKey) {
+  if (screenKey === 'admin') return role === 'Admin';
+  const modules = SCREEN_MODULES[screenKey];
+  if (!modules) return true; // dashboard, empty-states, etc. — always visible
+  return modules.some((m) => canAccess(role, m, 'read'));
+}
 
 export function toNonConformityView(dto) {
   const statusMeta = NON_CONFORMITY_STATUS_META[dto.status] || NON_CONFORMITY_STATUS_META.Open;
@@ -460,6 +509,7 @@ export function toUserView(dto) {
     name: dto.displayName,
     email: dto.email,
     role: roleMeta.label,
+    roleKey: dto.role,
     tone: roleMeta.tone,
   };
 }

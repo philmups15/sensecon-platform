@@ -1,6 +1,16 @@
 import { navGroups } from '../lib/mockData';
+import { canViewScreen } from '../lib/api';
 
-export default function Sidebar({ screen, onNavigate, onLogout }) {
+export default function Sidebar({ screen, onNavigate, onLogout, currentUser }) {
+  const role = currentUser?.role;
+
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(([, key]) => canViewScreen(role, key)),
+    }))
+    .filter((group) => group.items.length > 0);
+
   return (
     <div
       style={{
@@ -21,7 +31,7 @@ export default function Sidebar({ screen, onNavigate, onLogout }) {
         <div style={{ fontSize: 15.5, fontWeight: 800, letterSpacing: -0.3, color: '#141719' }}>Sensecon</div>
       </div>
 
-      {navGroups.map((group) => (
+      {visibleGroups.map((group) => (
         <div key={group.label} style={{ marginBottom: 14 }}>
           <div
             style={{

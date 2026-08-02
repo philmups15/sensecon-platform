@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import Spinner from '../components/Spinner';
-import { getReports, createReport, toReportView } from '../lib/api';
+import { getReports, createReport, toReportView, canAccess } from '../lib/api';
 import { reportCatalogue } from '../lib/mockData';
 
-export default function Reports() {
+export default function Reports({ currentUser }) {
+  const canWrite = canAccess(currentUser?.role, 'reports', 'write');
+
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -36,14 +38,16 @@ export default function Reports() {
           <div key={i} style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div style={{ fontSize: 13.5, fontWeight: 700 }}>{r.name}</div>
             <div style={{ fontSize: 12, color: '#6A7178' }}>{r.desc}</div>
-            <button
-              onClick={() => generate(r.name)}
-              disabled={generating === r.name}
-              style={{ alignSelf: 'flex-start', marginTop: 6, padding: '7px 14px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: generating === r.name ? 'default' : 'pointer', opacity: generating === r.name ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 7 }}
-            >
-              {generating === r.name && <Spinner size={12} color="#fff" />}
-              {generating === r.name ? 'Generating…' : 'Generate'}
-            </button>
+            {canWrite && (
+              <button
+                onClick={() => generate(r.name)}
+                disabled={generating === r.name}
+                style={{ alignSelf: 'flex-start', marginTop: 6, padding: '7px 14px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: generating === r.name ? 'default' : 'pointer', opacity: generating === r.name ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 7 }}
+              >
+                {generating === r.name && <Spinner size={12} color="#fff" />}
+                {generating === r.name ? 'Generating…' : 'Generate'}
+              </button>
+            )}
           </div>
         ))}
       </div>

@@ -13,10 +13,10 @@ import {
   convertOpportunityToProject,
   uploadOpportunityAttachments,
   downloadOpportunityAttachment,
-  getCurrentUser,
   toOpportunityView,
   OPPORTUNITY_STAGE_META,
   STAGE_FIELD_DEFS,
+  canAccess,
 } from '../lib/api';
 
 const OPP_STAGE_ENTRIES = Object.entries(OPPORTUNITY_STAGE_META);
@@ -83,7 +83,9 @@ const LIST_GRID_COLUMNS = '1.4fr 0.7fr 1.1fr 1.1fr 0.9fr 0.85fr 0.75fr 1.3fr';
 
 const EMPTY_FORM = { customer: '', capacity: '', location: '', owner: '', value: '', nextAction: '' };
 
-export default function Opportunities() {
+export default function Opportunities({ currentUser }) {
+  const canWrite = canAccess(currentUser?.role, 'opportunities', 'write');
+
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,7 +93,6 @@ export default function Opportunities() {
   const [selectedId, setSelectedId] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const [search, setSearch] = useState('');
-  const [currentUser, setCurrentUser] = useState(null);
 
   const [movingId, setMovingId] = useState(null);
   const [moveError, setMoveError] = useState('');
@@ -140,7 +141,6 @@ export default function Opportunities() {
       .then((dtos) => setOpportunities(dtos.map(toOpportunityView)))
       .catch((err) => setError(err.message || 'Failed to load opportunities.'))
       .finally(() => setLoading(false));
-    getCurrentUser().then(setCurrentUser).catch(() => {});
   }, []);
 
   const refreshOpportunity = async (id) => {
@@ -431,9 +431,11 @@ export default function Opportunities() {
               Kanban
             </button>
             <div style={{ flex: 1 }} />
-            <button onClick={openAddForm} style={{ ...primaryBtnStyle, padding: '7px 14px' }}>
-              + Add opportunity
-            </button>
+            {canWrite && (
+              <button onClick={openAddForm} style={{ ...primaryBtnStyle, padding: '7px 14px' }}>
+                + Add opportunity
+              </button>
+            )}
           </div>
           {view === 'kanban' && <div style={{ fontSize: 11.5, color: '#9AA0A6', marginTop: -8 }}>Drag a card to another column to move it through the pipeline.</div>}
 
@@ -477,17 +479,21 @@ export default function Opportunities() {
                   </div>
                   <div onClick={() => openDetail(o.entityId)} style={{ color: '#334155', cursor: 'pointer' }}>{o.capacity}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <select
-                      value={o.stageKey}
-                      disabled={movingId === o.entityId}
-                      onChange={(e) => changeStage(o, e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ ...selectStyle, opacity: movingId === o.entityId ? 0.6 : 1 }}
-                    >
-                      {OPP_STAGE_ENTRIES.map(([key, meta]) => (
-                        <option key={key} value={key}>{meta.label}</option>
-                      ))}
-                    </select>
+                    {canWrite ? (
+                      <select
+                        value={o.stageKey}
+                        disabled={movingId === o.entityId}
+                        onChange={(e) => changeStage(o, e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ ...selectStyle, opacity: movingId === o.entityId ? 0.6 : 1 }}
+                      >
+                        {OPP_STAGE_ENTRIES.map(([key, meta]) => (
+                          <option key={key} value={key}>{meta.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <Chip label={o.stage} tone={o.tone} />
+                    )}
                     {movingId === o.entityId && <Spinner size={12} />}
                   </div>
                   <div onClick={() => openDetail(o.entityId)} style={{ color: '#334155', cursor: 'pointer' }}>{o.next || '—'}</div>
@@ -501,8 +507,8 @@ export default function Opportunities() {
                   <div onClick={() => openDetail(o.entityId)} style={{ color: '#9AA0A6', fontSize: 12, cursor: 'pointer' }}>{o.activity[0]?.tsLabel || '—'}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <button type="button" onClick={() => openDetail(o.entityId)} style={linkBtnStyle}>View</button>
-                    <button type="button" onClick={() => openDetailForEdit(o)} style={linkBtnStyle}>Edit</button>
-                    {deletingId === o.entityId ? <Spinner size={12} /> : <button type="button" onClick={() => removeOpportunity(o)} style={dangerBtnStyle}>Delete</button>}
+                    {canWrite && <button type="button" onClick={() => openDetailForEdit(o)} style={linkBtnStyle}>Edit</button>}
+                    {canWrite && (deletingId === o.entityId ? <Spinner size={12} /> : <button type="button" onClick={() => removeOpportunity(o)} style={dangerBtnStyle}>Delete</button>)}
                   </div>
                 </div>
               ))}
@@ -529,7 +535,7 @@ export default function Opportunities() {
                     {col.cards.map((c) => (
                       <div
                         key={c.entityId}
-                        draggable
+                        draggable={canWrite}
                         onDragStart={(e) => {
                           e.dataTransfer.setData('text/plain', c.entityId);
                           setDragId(c.entityId);
@@ -542,36 +548,40 @@ export default function Opportunities() {
                           borderRadius: 10,
                           padding: 12,
                           boxShadow: '0 1px 2px rgba(20,23,25,0.05)',
-                          cursor: 'grab',
+                          cursor: canWrite ? 'grab' : 'pointer',
                           opacity: movingId === c.entityId || dragId === c.entityId ? 0.5 : 1,
                         }}
                       >
                         <div style={{ fontSize: 12.5, fontWeight: 700, color: '#141719' }}>{c.customer}</div>
                         <div style={{ fontSize: 11, color: '#6A7178', marginTop: 3 }}>{c.capacity} · {c.location}</div>
                         <div style={{ fontSize: 11, color: '#9AA0A6', marginTop: 6 }}>{c.next}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                          <button
-                            type="button"
-                            disabled={col.stageIndex === 0 || movingId === c.entityId}
-                            onClick={(e) => { e.stopPropagation(); changeStage(c, STAGE_ORDER[col.stageIndex - 1]); }}
-                            style={{ ...linkBtnStyle, visibility: col.stageIndex === 0 ? 'hidden' : 'visible' }}
-                          >
-                            ‹ Back
-                          </button>
-                          {movingId === c.entityId && <Spinner size={12} />}
-                          <button
-                            type="button"
-                            disabled={col.stageIndex === STAGE_ORDER.length - 1 || movingId === c.entityId}
-                            onClick={(e) => { e.stopPropagation(); changeStage(c, STAGE_ORDER[col.stageIndex + 1]); }}
-                            style={{ ...linkBtnStyle, visibility: col.stageIndex === STAGE_ORDER.length - 1 ? 'hidden' : 'visible' }}
-                          >
-                            Next ›
-                          </button>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); openDetailForEdit(c); }} style={linkBtnStyle}>Edit</button>
-                          {deletingId === c.entityId ? <Spinner size={12} /> : <button type="button" onClick={(e) => { e.stopPropagation(); removeOpportunity(c); }} style={dangerBtnStyle}>Delete</button>}
-                        </div>
+                        {canWrite && (
+                          <>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                              <button
+                                type="button"
+                                disabled={col.stageIndex === 0 || movingId === c.entityId}
+                                onClick={(e) => { e.stopPropagation(); changeStage(c, STAGE_ORDER[col.stageIndex - 1]); }}
+                                style={{ ...linkBtnStyle, visibility: col.stageIndex === 0 ? 'hidden' : 'visible' }}
+                              >
+                                ‹ Back
+                              </button>
+                              {movingId === c.entityId && <Spinner size={12} />}
+                              <button
+                                type="button"
+                                disabled={col.stageIndex === STAGE_ORDER.length - 1 || movingId === c.entityId}
+                                onClick={(e) => { e.stopPropagation(); changeStage(c, STAGE_ORDER[col.stageIndex + 1]); }}
+                                style={{ ...linkBtnStyle, visibility: col.stageIndex === STAGE_ORDER.length - 1 ? 'hidden' : 'visible' }}
+                              >
+                                Next ›
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); openDetailForEdit(c); }} style={linkBtnStyle}>Edit</button>
+                              {deletingId === c.entityId ? <Spinner size={12} /> : <button type="button" onClick={(e) => { e.stopPropagation(); removeOpportunity(c); }} style={dangerBtnStyle}>Delete</button>}
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -593,7 +603,7 @@ export default function Opportunities() {
               <div style={{ fontSize: 12, color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{selected.id} · {selected.location || '—'}</div>
             </div>
             <div style={{ flex: 1 }} />
-            {deletingId === selected.entityId ? <Spinner size={14} /> : <button type="button" onClick={() => removeOpportunity(selected)} style={{ ...dangerBtnStyle, fontSize: 12.5 }}>Delete</button>}
+            {canWrite && (deletingId === selected.entityId ? <Spinner size={14} /> : <button type="button" onClick={() => removeOpportunity(selected)} style={{ ...dangerBtnStyle, fontSize: 12.5 }}>Delete</button>)}
           </div>
 
           <div style={cardStyle}>
@@ -607,7 +617,7 @@ export default function Opportunities() {
                 const toneColor = { slate: '#334155', blue: '#2563EB', violet: '#6D28D9', amber: '#B45309', green: '#15803D' }[meta.tone] || '#334155';
                 return (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                    <div onClick={() => openStageChangeModal(key)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, cursor: 'pointer', flexShrink: 0 }}>
+                    <div onClick={() => canWrite && openStageChangeModal(key)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, cursor: canWrite ? 'pointer' : 'default', flexShrink: 0 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 800, fontSize: 13.5, boxSizing: 'border-box',
@@ -633,7 +643,7 @@ export default function Opportunities() {
               <div style={cardStyle}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={cardHeaderStyle}>Details</div>
-                  {!editingCore && <button onClick={() => startEditCore(selected)} style={linkBtnStyle}>Edit</button>}
+                  {canWrite && !editingCore && <button onClick={() => startEditCore(selected)} style={linkBtnStyle}>Edit</button>}
                   {editingCore && (
                     <div style={{ display: 'flex', gap: 10 }}>
                       <button onClick={cancelEditCore} disabled={savingCore} style={{ ...linkBtnStyle, color: '#9AA0A6' }}>Cancel</button>
@@ -673,7 +683,7 @@ export default function Opportunities() {
               <div style={cardStyle}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                   <div style={cardHeaderStyle}>{selected.stage} details</div>
-                  {!editingStageData && <button onClick={startEditStageData} style={linkBtnStyle}>Edit</button>}
+                  {canWrite && !editingStageData && <button onClick={startEditStageData} style={linkBtnStyle}>Edit</button>}
                   {editingStageData && (
                     <div style={{ display: 'flex', gap: 10 }}>
                       <button onClick={cancelEditStageData} disabled={savingStageData} style={{ ...linkBtnStyle, color: '#9AA0A6' }}>Cancel</button>
@@ -708,6 +718,7 @@ export default function Opportunities() {
 
               <div style={cardStyle}>
                 <div style={{ ...cardHeaderStyle, marginBottom: 16 }}>Documents</div>
+                {canWrite && (
                 <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                   <input
                     value={docTitleDraft}
@@ -727,7 +738,8 @@ export default function Opportunities() {
                     {uploadingDoc && <Spinner size={11} color="#fff" />}+ Add version
                   </button>
                 </div>
-                {docFiles.length > 0 && (
+                )}
+                {canWrite && docFiles.length > 0 && (
                   <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {docFiles.map((f, i) => (
                       <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', background: '#F7F8F9', borderRadius: 6, fontSize: 12 }}>
@@ -770,18 +782,20 @@ export default function Opportunities() {
 
               <div style={{ ...cardStyle, marginBottom: 0 }}>
                 <div style={{ ...cardHeaderStyle, marginBottom: 16 }}>Notes</div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                  <input
-                    value={noteDraft}
-                    onChange={(e) => setNoteDraft(e.target.value)}
-                    placeholder="Add a note about this opportunity…"
-                    onKeyDown={(e) => { if (e.key === 'Enter') submitNote(); }}
-                    style={{ flex: 1, border: '1px solid #D2D8DC', borderRadius: 6, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit' }}
-                  />
-                  <button onClick={submitNote} disabled={addingNote || !noteDraft.trim()} style={{ ...primaryBtnStyle, opacity: addingNote || !noteDraft.trim() ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {addingNote && <Spinner size={11} color="#fff" />}Add
-                  </button>
-                </div>
+                {canWrite && (
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                    <input
+                      value={noteDraft}
+                      onChange={(e) => setNoteDraft(e.target.value)}
+                      placeholder="Add a note about this opportunity…"
+                      onKeyDown={(e) => { if (e.key === 'Enter') submitNote(); }}
+                      style={{ flex: 1, border: '1px solid #D2D8DC', borderRadius: 6, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit' }}
+                    />
+                    <button onClick={submitNote} disabled={addingNote || !noteDraft.trim()} style={{ ...primaryBtnStyle, opacity: addingNote || !noteDraft.trim() ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {addingNote && <Spinner size={11} color="#fff" />}Add
+                    </button>
+                  </div>
+                )}
                 {noteError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{noteError}</div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {selected.notes.map((n) => (
@@ -797,7 +811,7 @@ export default function Opportunities() {
 
             <div style={{ position: 'sticky', top: 20, display: 'flex', flexDirection: 'column', gap: 22 }}>
               {convertError && <div style={{ padding: '10px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{convertError}</div>}
-              {selected.stageKey === 'Won' && !selected.converted && (
+              {canWrite && selected.stageKey === 'Won' && !selected.converted && (
                 <button onClick={convert} disabled={converting} style={{ width: '100%', boxSizing: 'border-box', background: '#047857', color: '#fff', border: 'none', padding: 14, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   {converting && <Spinner size={13} color="#fff" />}Convert to project
                 </button>

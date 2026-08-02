@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { isAuthenticated, logout } from './lib/api';
+import { useEffect, useState } from 'react';
+import { isAuthenticated, logout, getCurrentUser } from './lib/api';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Dashboard from './screens/Dashboard';
@@ -38,6 +38,13 @@ export default function App() {
   const [tenantOpen, setTenantOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      getCurrentUser().then(setCurrentUser).catch(() => {});
+    }
+  }, []);
 
   const go = (next) => {
     setScreen(next);
@@ -46,15 +53,21 @@ export default function App() {
     setProfileOpen(false);
   };
 
+  const handleSignIn = () => {
+    getCurrentUser().then(setCurrentUser).catch(() => {});
+    go('dashboard');
+  };
+
   const handleLogout = () => {
     logout();
+    setCurrentUser(null);
     go('login');
   };
 
   if (screen === 'login') {
     return (
       <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F6F8', overflow: 'hidden', fontSize: 14 }}>
-        <Login onSignIn={() => go('dashboard')} />
+        <Login onSignIn={handleSignIn} />
       </div>
     );
   }
@@ -63,7 +76,7 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F6F8', overflow: 'hidden', position: 'relative', fontSize: 14 }}>
-      <Sidebar screen={screen} onNavigate={go} onLogout={handleLogout} />
+      <Sidebar screen={screen} onNavigate={go} onLogout={handleLogout} currentUser={currentUser} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Topbar
@@ -78,7 +91,7 @@ export default function App() {
         />
 
         <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px', background: '#F4F6F8' }}>
-          <Screen />
+          <Screen currentUser={currentUser} />
         </div>
       </div>
     </div>
