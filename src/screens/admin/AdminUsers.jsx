@@ -31,10 +31,6 @@ import {
   ExportMenu,
 } from './shared';
 
-// Not persisted anywhere on the backend yet — see setUserStatus/adminSetPassword/
-// sendPasswordReset in lib/api.js. Every user is "Active" until the API adds a
-// real status field; the filter/column still work, they just won't find anyone
-// Disabled until that ships.
 const STATUS_OPTIONS = ['Active', 'Disabled'];
 
 function generatePassword() {
@@ -80,7 +76,7 @@ export default function AdminUsers({ currentUser }) {
 
   useEffect(() => {
     getUsers()
-      .then((dtos) => setUsers(dtos.map((d) => ({ ...toUserView(d), status: 'Active' }))))
+      .then((dtos) => setUsers(dtos.map(toUserView)))
       .catch((err) => setError(err.message || 'Failed to load users.'))
       .finally(() => setLoading(false));
   }, []);
@@ -171,7 +167,7 @@ export default function AdminUsers({ currentUser }) {
       }
       setPasswordModal(null);
     } catch (err) {
-      setPwError(`${err.message || 'Request failed'} — this action depends on a backend endpoint that hasn't shipped yet (Phase 2).`);
+      setPwError(err.message || 'Request failed.');
     } finally {
       setPwSubmitting(false);
     }
@@ -183,11 +179,12 @@ export default function AdminUsers({ currentUser }) {
     setStatusSubmitting(true);
     setStatusError('');
     try {
-      await setUserStatus(statusModal.entityId, !disabling);
-      setUsers((prev) => prev.map((u) => (u.entityId === statusModal.entityId ? { ...u, status: disabling ? 'Disabled' : 'Active' } : u)));
+      const result = await setUserStatus(statusModal.entityId, !disabling);
+      const newStatus = result.isActive === false ? 'Disabled' : 'Active';
+      setUsers((prev) => prev.map((u) => (u.entityId === statusModal.entityId ? { ...u, status: newStatus } : u)));
       setStatusModal(null);
     } catch (err) {
-      setStatusError(`${err.message || 'Request failed'} — this action depends on a backend endpoint that hasn't shipped yet (Phase 2).`);
+      setStatusError(err.message || 'Request failed.');
     } finally {
       setStatusSubmitting(false);
     }
@@ -298,12 +295,13 @@ export default function AdminUsers({ currentUser }) {
                           <KebabMenu
                             items={[
                               { label: '👤 View details', onClick: () => setViewingUser(u) },
-                              { label: '🔑 Change password', onClick: () => openPasswordModal(u, 'change') },
-                              { label: '✉️ Reset password', onClick: () => openPasswordModal(u, 'reset') },
+                              { label: '🔑 Change password', disabled: isSelf, onClick: () => openPasswordModal(u, 'change') },
+                              { label: '✉️ Reset password', disabled: isSelf, onClick: () => openPasswordModal(u, 'reset') },
                               { divider: true },
                               {
                                 label: u.status === 'Active' ? '🚫 Disable user' : '✅ Enable user',
                                 danger: u.status === 'Active',
+                                disabled: isSelf,
                                 onClick: () => { setStatusError(''); setStatusModal(u); },
                               },
                             ]}
@@ -390,7 +388,7 @@ export default function AdminUsers({ currentUser }) {
               <ModalField label="Confirm password">
                 <input type="password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} placeholder="Confirm new password" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
               </ModalField>
-              <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 10 }}>The user will be signed out of all active sessions.</div>
+              <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 10 }}>Takes effect on their next sign-in — any session they're already signed into stays active until its token expires.</div>
             </>
           ) : (
             <p style={{ fontSize: 13, margin: '0 0 10px' }}>

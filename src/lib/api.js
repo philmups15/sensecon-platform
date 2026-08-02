@@ -184,25 +184,27 @@ export const changePassword = (currentPassword, newPassword) =>
   request('/api/users/me/password', { method: 'PUT', body: { currentPassword, newPassword } });
 export const updateUserRole = (id, role) => request(`/api/users/${id}/role`, { method: 'PUT', body: { role } });
 
-// TODO(Phase 2 — Sencecon.API): no backend endpoint exists yet for admin-driven
-// status changes. This will 404 until the API adds PUT /api/users/{id}/status
-// (or an equivalent field on the user update). Call it for real rather than
-// faking success locally, so the UI surfaces the failure honestly today and
-// starts working the moment the endpoint ships.
 export const setUserStatus = (id, enabled) =>
   request(`/api/users/${id}/status`, { method: 'PUT', body: { enabled } });
 
-// TODO(Phase 2 — Sencecon.API): no backend endpoint exists yet. Distinct from
-// changePassword() above, which requires the caller's own current password and
-// only works for your own account — this is an admin setting *someone else's*
-// password directly. Will 404 until the API adds it.
+// Distinct from changePassword() above, which requires the caller's own
+// current password and only works for your own account — this is an admin
+// setting *someone else's* password directly.
 export const adminSetPassword = (id, newPassword) =>
   request(`/api/users/${id}/password`, { method: 'PUT', body: { newPassword } });
 
-// TODO(Phase 2 — Sencecon.API): no backend endpoint or email flow exists yet
-// for sending a password-reset link. Will 404 until the API adds it.
+// Admin-triggered: emails the target user a reset link (24h expiry).
 export const sendPasswordReset = (id) =>
   request(`/api/users/${id}/password-reset`, { method: 'POST' });
+
+// Public — consumed by the reset-password link's token, not an authenticated call.
+export const resetPassword = (token, newPassword) =>
+  request('/api/auth/reset-password', { method: 'POST', auth: false, body: { token, newPassword } });
+
+// ---- Integrations ----
+export const getIntegrationSettings = () => request('/api/integrations');
+export const updateIntegrationSetting = (key, data) =>
+  request(`/api/integrations/${key}`, { method: 'PUT', body: data });
 
 // ---- Audit log ----
 export const getAuditLog = () => request('/api/auditlog');
@@ -536,6 +538,7 @@ export function toUserView(dto) {
     role: roleMeta.label,
     roleKey: dto.role,
     tone: roleMeta.tone,
+    status: dto.isActive === false ? 'Disabled' : 'Active',
   };
 }
 

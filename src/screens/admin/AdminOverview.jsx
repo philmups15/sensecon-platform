@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import Chip from '../../components/Chip';
 import Spinner from '../../components/Spinner';
-import { getUsers, getAuditLog, toAuditLogView } from '../../lib/api';
-import { tenants, templates, integrations } from '../../lib/mockData';
+import { getUsers, getAuditLog, getIntegrationSettings, toAuditLogView } from '../../lib/api';
+import { tenants, templates } from '../../lib/mockData';
 import { cardStyle, linkBtnStyle } from './shared';
 
 const cardHeadStyle = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #E4E8EB' };
@@ -13,6 +13,8 @@ export default function AdminOverview({ onNavigate }) {
   const [roleCount, setRoleCount] = useState(null);
   const [recentAudit, setRecentAudit] = useState([]);
   const [auditLoading, setAuditLoading] = useState(true);
+  const [integrations, setIntegrations] = useState([]);
+  const [integrationsLoading, setIntegrationsLoading] = useState(true);
 
   useEffect(() => {
     getUsers()
@@ -26,6 +28,11 @@ export default function AdminOverview({ onNavigate }) {
       .then((dtos) => setRecentAudit(dtos.slice(0, 3).map(toAuditLogView)))
       .catch(() => {})
       .finally(() => setAuditLoading(false));
+
+    getIntegrationSettings()
+      .then(setIntegrations)
+      .catch(() => {})
+      .finally(() => setIntegrationsLoading(false));
   }, []);
 
   return (
@@ -75,10 +82,11 @@ export default function AdminOverview({ onNavigate }) {
             <div style={{ fontSize: 12.5, fontWeight: 700 }}>Integrations</div>
             <button type="button" onClick={() => onNavigate('integrations')} style={linkBtnStyle}>Open →</button>
           </div>
-          {integrations.map((i2, i) => (
-            <div key={i} style={{ ...rowStyle, borderBottom: i === integrations.length - 1 ? 'none' : rowStyle.borderBottom }}>
+          {integrationsLoading && <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6' }}><Spinner size={13} />Loading…</div>}
+          {!integrationsLoading && integrations.map((i2, i) => (
+            <div key={i2.key} style={{ ...rowStyle, borderBottom: i === integrations.length - 1 ? 'none' : rowStyle.borderBottom }}>
               <div>{i2.name}</div>
-              <Chip label={i2.status} tone={i2.tone} />
+              <Chip label={i2.status} tone={i2.status === 'Connected' ? 'green' : 'slate'} />
             </div>
           ))}
         </div>

@@ -16,6 +16,7 @@ import Portal from './screens/Portal';
 import Admin from './screens/Admin';
 import EmptyStates from './screens/EmptyStates';
 import Login from './screens/Login';
+import ResetPassword from './screens/ResetPassword';
 
 const SCREENS = {
   dashboard: Dashboard,
@@ -33,8 +34,14 @@ const SCREENS = {
   empty: EmptyStates,
 };
 
+function initialScreen() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('resetToken')) return 'reset-password';
+  return isAuthenticated() ? 'dashboard' : 'login';
+}
+
 export default function App() {
-  const [screen, setScreen] = useState(isAuthenticated() ? 'dashboard' : 'login');
+  const [screen, setScreen] = useState(initialScreen);
   const [tenantOpen, setTenantOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -63,6 +70,20 @@ export default function App() {
     setCurrentUser(null);
     go('login');
   };
+
+  const handleResetDone = () => {
+    window.history.replaceState({}, '', window.location.pathname);
+    go('login');
+  };
+
+  if (screen === 'reset-password') {
+    const token = new URLSearchParams(window.location.search).get('resetToken');
+    return (
+      <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F6F8', overflow: 'hidden', fontSize: 14 }}>
+        <ResetPassword token={token} onDone={handleResetDone} />
+      </div>
+    );
+  }
 
   if (screen === 'login') {
     return (
