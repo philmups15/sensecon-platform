@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { isAuthenticated, logout, getCurrentUser } from './lib/api';
+import { isAuthenticated, logout, getCurrentUser, getRolePermissions, setRolePermissionsCache } from './lib/api';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Dashboard from './screens/Dashboard';
@@ -46,10 +46,21 @@ export default function App() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [permissionsVersion, setPermissionsVersion] = useState(0);
+
+  const loadPermissions = () => {
+    getRolePermissions()
+      .then((rows) => {
+        setRolePermissionsCache(rows);
+        setPermissionsVersion((v) => v + 1);
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     if (isAuthenticated()) {
       getCurrentUser().then(setCurrentUser).catch(() => {});
+      loadPermissions();
     }
   }, []);
 
@@ -62,6 +73,7 @@ export default function App() {
 
   const handleSignIn = () => {
     getCurrentUser().then(setCurrentUser).catch(() => {});
+    loadPermissions();
     go('dashboard');
   };
 

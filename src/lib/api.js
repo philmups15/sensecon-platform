@@ -466,23 +466,30 @@ export const USER_ROLE_META = {
 // Every role that can log in, for populating the Admin role-change dropdown.
 export const ALL_ROLES = ['Admin', 'User', 'Sales', 'ProjectManager', 'DesignEngineer'];
 
-// Mirrors the backend's Sencecon.API/Authorization/Roles.cs ModuleAccess matrix exactly.
-// 'read' gates whether a role can see the module/screen at all; 'write' gates
-// create/edit/delete/stage-change controls within a module the role can already read.
-export const MODULE_ACCESS = {
-  opportunities: { read: ['Admin', 'User', 'Sales', 'ProjectManager'], write: ['Admin', 'Sales'] },
-  surveys: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
-  designs: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
-  bomItems: { read: ['Admin', 'User', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'DesignEngineer'] },
-  projects: { read: ['Admin', 'User', 'Sales', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'ProjectManager'] },
-  plants: { read: ['Admin', 'User', 'ProjectManager'], write: ['Admin', 'ProjectManager'] },
-  workOrders: { read: ['Admin', 'User', 'ProjectManager'], write: ['Admin', 'ProjectManager'] },
-  nonConformities: { read: ['Admin', 'User', 'ProjectManager'], write: ['Admin', 'ProjectManager'] },
-  reports: { read: ['Admin', 'User', 'Sales', 'ProjectManager', 'DesignEngineer'], write: ['Admin', 'ProjectManager'] },
-};
+// ---- Role permissions (dynamic, DB-backed — editable from the Admin > Roles & Permissions page) ----
+export const getRolePermissions = () => request('/api/rolepermissions');
+export const updateRolePermission = (role, module, data) =>
+  request(`/api/rolepermissions/${role}/${module}`, { method: 'PUT', body: data });
+
+// Populated once at startup (see App.jsx) from getRolePermissions(). Until it
+// loads, canAccess() defaults to "no access" rather than trusting stale data —
+// the RolePermissions table on the backend is the single source of truth, and
+// it's also enforced there for real, so this cache is only about what the UI
+// shows, not what's actually allowed.
+let moduleAccessCache = {};
+
+export function setRolePermissionsCache(rows) {
+  const matrix = {};
+  for (const { role, module, canRead, canWrite } of rows) {
+    if (!matrix[module]) matrix[module] = { read: [], write: [] };
+    if (canRead) matrix[module].read.push(role);
+    if (canWrite) matrix[module].write.push(role);
+  }
+  moduleAccessCache = matrix;
+}
 
 export function canAccess(role, module, mode = 'read') {
-  return MODULE_ACCESS[module]?.[mode]?.includes(role) ?? false;
+  return moduleAccessCache[module]?.[mode]?.includes(role) ?? false;
 }
 
 // Screen key -> module(s) it depends on. A screen that reads from more than one

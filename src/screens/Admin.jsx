@@ -25,7 +25,7 @@ export default function Admin({ currentUser }) {
 
       {tab === 'overview' && <AdminOverview onNavigate={setTab} />}
       {tab === 'users' && <AdminUsers currentUser={currentUser} />}
-      {tab === 'roles' && <AdminRoles />}
+      {tab === 'roles' && <AdminRoles currentUser={currentUser} />}
       {tab === 'audit' && <AdminAuditLog />}
       {tab === 'integrations' && <AdminIntegrations />}
     </div>
