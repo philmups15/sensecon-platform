@@ -17,9 +17,11 @@ import Admin from './screens/Admin';
 import EmptyStates from './screens/EmptyStates';
 import Login from './screens/Login';
 import ResetPassword from './screens/ResetPassword';
+import Profile from './screens/Profile';
 
 const SCREENS = {
   dashboard: Dashboard,
+  profile: Profile,
   opportunities: Opportunities,
   surveys: Surveys,
   design: Design,
@@ -120,11 +122,12 @@ export default function App() {
           onToggleTenant={() => { setTenantOpen((v) => !v); setNotifOpen(false); setProfileOpen(false); }}
           onToggleNotif={() => { setNotifOpen((v) => !v); setTenantOpen(false); setProfileOpen(false); }}
           onToggleProfile={() => { setProfileOpen((v) => !v); setTenantOpen(false); setNotifOpen(false); }}
+          onNavigate={go}
           onLogout={handleLogout}
         />
 
         <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px', background: '#F4F6F8' }}>
-          <Screen currentUser={currentUser} />
+          <Screen currentUser={currentUser} onUserUpdate={setCurrentUser} />
         </div>
       </div>
     </div>

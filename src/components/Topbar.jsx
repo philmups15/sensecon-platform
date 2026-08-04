@@ -9,6 +9,7 @@ export default function Topbar({
   onToggleTenant,
   onToggleNotif,
   onToggleProfile,
+  onNavigate,
   onLogout,
 }) {
   return (
@@ -151,7 +152,7 @@ export default function Topbar({
         </div>
       )}
 
-      <ProfileMenu open={profileOpen} onToggle={onToggleProfile} onLogout={onLogout} />
+      <ProfileMenu open={profileOpen} onToggle={onToggleProfile} onNavigate={onNavigate} onLogout={onLogout} />
     </div>
   );
 }

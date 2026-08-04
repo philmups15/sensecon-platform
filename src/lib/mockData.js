@@ -37,6 +37,7 @@ export const pageTitles = {
   portal: 'Customer portal',
   admin: 'Administration',
   empty: 'Empty & error states',
+  profile: 'My profile',
   login: '',
 };
 

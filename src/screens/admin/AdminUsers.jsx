@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Avatar from '../../components/Avatar';
 import Chip from '../../components/Chip';
 import Spinner from '../../components/Spinner';
 import {
@@ -58,6 +59,11 @@ export default function AdminUsers({ currentUser }) {
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('User');
+  const [newUsername, setNewUsername] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newAddress, setNewAddress] = useState('');
+  const [newJobDescription, setNewJobDescription] = useState('');
+  const [moreDetailsOpen, setMoreDetailsOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [createdCredential, setCreatedCredential] = useState(null);
@@ -118,17 +124,41 @@ export default function AdminUsers({ currentUser }) {
     setCreating(true);
     setCreateError('');
     const password = generatePassword();
+    const profile = {
+      username: newUsername.trim() || undefined,
+      phoneNumber: newPhone.trim() || undefined,
+      address: newAddress.trim() || undefined,
+      jobDescription: newJobDescription.trim() || undefined,
+    };
     try {
-      const result = await adminCreateUser(newEmail.trim(), password, newDisplayName.trim());
+      const result = await adminCreateUser(newEmail.trim(), password, newDisplayName.trim(), profile);
       if (newRole !== 'User') {
         await updateUserRole(result.userId, newRole);
       }
       const meta = USER_ROLE_META[newRole];
-      setUsers((prev) => [...prev, { entityId: result.userId, name: newDisplayName.trim(), email: result.email, role: meta.label, roleKey: newRole, tone: meta.tone, status: 'Active' }]);
+      setUsers((prev) => [...prev, {
+        entityId: result.userId,
+        name: newDisplayName.trim(),
+        email: result.email,
+        role: meta.label,
+        roleKey: newRole,
+        tone: meta.tone,
+        status: 'Active',
+        username: profile.username || '',
+        phoneNumber: profile.phoneNumber || '',
+        address: profile.address || '',
+        jobDescription: profile.jobDescription || '',
+        hasAvatar: false,
+      }]);
       setCreatedCredential({ email: result.email, password });
       setNewDisplayName('');
       setNewEmail('');
       setNewRole('User');
+      setNewUsername('');
+      setNewPhone('');
+      setNewAddress('');
+      setNewJobDescription('');
+      setMoreDetailsOpen(false);
       setCreatingOpen(false);
       setPage(1);
     } catch (err) {
@@ -353,6 +383,26 @@ export default function AdminUsers({ currentUser }) {
               </select>
               <div style={{ fontSize: 11, color: '#9AA0A6', marginTop: 4 }}>Role determines which pages and actions this user can access.</div>
             </ModalField>
+
+            {!moreDetailsOpen ? (
+              <button type="button" onClick={() => setMoreDetailsOpen(true)} style={linkBtnStyle}>+ Add more details (optional)</button>
+            ) : (
+              <>
+                <ModalField label="Username">
+                  <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} placeholder="Optional" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </ModalField>
+                <ModalField label="Phone">
+                  <input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="Optional" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </ModalField>
+                <ModalField label="Address">
+                  <input value={newAddress} onChange={(e) => setNewAddress(e.target.value)} placeholder="Optional" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </ModalField>
+                <ModalField label="Job description">
+                  <input value={newJobDescription} onChange={(e) => setNewJobDescription(e.target.value)} placeholder="Optional" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
+                </ModalField>
+              </>
+            )}
+
             {createError && <div style={errorBannerStyle}>{createError}</div>}
           </form>
         </Modal>
@@ -360,10 +410,17 @@ export default function AdminUsers({ currentUser }) {
 
       {viewingUser && (
         <Modal title="User details" onClose={() => setViewingUser(null)} footer={<button type="button" onClick={() => setViewingUser(null)} style={secondaryBtnStyle}>Close</button>}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <Avatar userId={viewingUser.entityId} name={viewingUser.name} hasAvatar={viewingUser.hasAvatar} size={64} fontSize={22} />
+          </div>
           <ModalField label="Name">{viewingUser.name}</ModalField>
           <ModalField label="Email">{viewingUser.email}</ModalField>
           <ModalField label="Role"><Chip label={viewingUser.role} tone={viewingUser.tone} /></ModalField>
           <ModalField label="Status"><Chip label={viewingUser.status} tone={viewingUser.status === 'Active' ? 'green' : 'red'} /></ModalField>
+          {viewingUser.username && <ModalField label="Username">{viewingUser.username}</ModalField>}
+          {viewingUser.phoneNumber && <ModalField label="Phone">{viewingUser.phoneNumber}</ModalField>}
+          {viewingUser.address && <ModalField label="Address">{viewingUser.address}</ModalField>}
+          {viewingUser.jobDescription && <ModalField label="Job description">{viewingUser.jobDescription}</ModalField>}
         </Modal>
       )}
 

@@ -87,6 +87,23 @@ export async function downloadFile(path, fileName) {
   URL.revokeObjectURL(url);
 }
 
+// For displaying an image inline (<img src={...}>) rather than triggering a
+// download — every API route requires a Bearer token, which a plain <img src>
+// can't send, so this fetches the bytes and hands back an object URL instead.
+// Returns null if the resource doesn't exist (e.g. no avatar set) rather than
+// throwing, since "no avatar" is an expected, common case.
+export async function fetchBlobUrl(path) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}${path}`, { headers });
+  if (!res.ok) return null;
+
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
 // ---- Auth ----
 export async function login(email, password) {
   const result = await request('/api/auth/login', { method: 'POST', auth: false, body: { email, password } });
@@ -94,16 +111,16 @@ export async function login(email, password) {
   return result;
 }
 
-export async function register(email, password, displayName) {
-  const result = await request('/api/auth/register', { method: 'POST', auth: false, body: { email, password, displayName } });
+export async function register(email, password, displayName, profile = {}) {
+  const result = await request('/api/auth/register', { method: 'POST', auth: false, body: { email, password, displayName, ...profile } });
   setToken(result.token);
   return result;
 }
 
 // Same endpoint as register(), but for an admin creating another user's account —
 // it must NOT store the returned token, or it would replace the admin's own session.
-export const adminCreateUser = (email, password, displayName) =>
-  request('/api/auth/register', { method: 'POST', body: { email, password, displayName } });
+export const adminCreateUser = (email, password, displayName, profile = {}) =>
+  request('/api/auth/register', { method: 'POST', body: { email, password, displayName, ...profile } });
 
 // ---- Plants ----
 export const getPlants = () => request('/api/plants');
@@ -179,10 +196,36 @@ export const deleteReport = (id) => request(`/api/reports/${id}`, { method: 'DEL
 // ---- Users ----
 export const getUsers = () => request('/api/users');
 export const getCurrentUser = () => request('/api/users/me');
-export const updateProfile = (displayName) => request('/api/users/me', { method: 'PUT', body: { displayName } });
+// data: { displayName, username, phoneNumber, address, jobDescription }
+export const updateProfile = (data) => request('/api/users/me', { method: 'PUT', body: data });
 export const changePassword = (currentPassword, newPassword) =>
   request('/api/users/me/password', { method: 'PUT', body: { currentPassword, newPassword } });
 export const updateUserRole = (id, role) => request(`/api/users/${id}/role`, { method: 'PUT', body: { role } });
+
+export async function uploadAvatar(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const headers = {};
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}/api/users/me/avatar`, { method: 'POST', headers, body: formData });
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const payload = await res.json();
+      detail = payload.title || JSON.stringify(payload.errors) || detail;
+    } catch {
+      // response had no JSON body
+    }
+    throw new Error(detail);
+  }
+  return res.json();
+}
+
+export const deleteAvatar = () => request('/api/users/me/avatar', { method: 'DELETE' });
+export const getAvatarBlobUrl = (userId) => fetchBlobUrl(`/api/users/${userId}/avatar`);
 
 export const setUserStatus = (id, enabled) =>
   request(`/api/users/${id}/status`, { method: 'PUT', body: { enabled } });
@@ -546,6 +589,12 @@ export function toUserView(dto) {
     roleKey: dto.role,
     tone: roleMeta.tone,
     status: dto.isActive === false ? 'Disabled' : 'Active',
+    username: dto.username || '',
+    phoneNumber: dto.phoneNumber || '',
+    address: dto.address || '',
+    jobDescription: dto.jobDescription || '',
+    hasAvatar: Boolean(dto.hasAvatar),
+    created: dto.created,
   };
 }
 
