@@ -127,7 +127,7 @@ export default function App() {
         />
 
         <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px', background: '#F4F6F8' }}>
-          <Screen currentUser={currentUser} onUserUpdate={setCurrentUser} />
+          <Screen currentUser={currentUser} onUserUpdate={setCurrentUser} onNavigate={go} />
         </div>
       </div>
     </div>

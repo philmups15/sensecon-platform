@@ -83,7 +83,7 @@ const LIST_GRID_COLUMNS = '1.4fr 0.7fr 1.1fr 1.1fr 0.9fr 0.85fr 0.75fr 1.3fr';
 
 const EMPTY_FORM = { customer: '', capacity: '', location: '', owner: '', value: '', nextAction: '' };
 
-export default function Opportunities({ currentUser }) {
+export default function Opportunities({ currentUser, onNavigate }) {
   const canWrite = canAccess(currentUser?.role, 'opportunities', 'write');
 
   const [opportunities, setOpportunities] = useState([]);
@@ -328,6 +328,8 @@ export default function Opportunities({ currentUser }) {
       setConverting(false);
     }
   };
+
+  const goToProjects = () => onNavigate?.('projects');
 
   const removeOpportunity = async (o) => {
     if (!window.confirm(`Delete the opportunity for ${o.customer}? This cannot be undone.`)) return;
@@ -817,7 +819,12 @@ export default function Opportunities({ currentUser }) {
                 </button>
               )}
               {selected.converted && (
-                <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontWeight: 700, fontSize: 13.5, padding: '14px 16px', borderRadius: 12 }}>✓ Converted to project</div>
+                <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ color: '#047857', fontWeight: 700, fontSize: 13.5 }}>✓ Converted to project</div>
+                  <button type="button" onClick={goToProjects} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', color: '#047857', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                    View project →
+                  </button>
+                </div>
               )}
 
               <div style={cardStyle}>

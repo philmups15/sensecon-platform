@@ -463,6 +463,10 @@ export function toSurveyView(dto) {
     progress: dto.progress,
     surveyor: dto.surveyor,
     date: formatDate(dto.date),
+    rawDate: dto.date,
+    statusKey: dto.status,
+    projectId: dto.projectId || null,
+    projectName: dto.projectName || '',
   };
 }
 
@@ -616,8 +620,11 @@ export function toProjectView(dto) {
     customer: dto.customer,
     stage: stageMeta.label,
     tone: stageMeta.tone,
+    stageKey: dto.stage,
     pm: dto.projectManager,
     budget: `$${Number(dto.budget).toLocaleString()}`,
     actual: `$${Number(dto.actual).toLocaleString()}`,
+    rawBudget: dto.budget,
+    rawActual: dto.actual,
   };
 }
