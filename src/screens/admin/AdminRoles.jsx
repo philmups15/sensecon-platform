@@ -83,7 +83,7 @@ export default function AdminRoles({ currentUser }) {
       <div style={sectionHeaderStyle}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 700 }}>Roles & Permissions</div>
-          <div style={{ fontSize: 12.5, color: '#9AA0A6', marginTop: 2 }}>What each of the 5 fixed roles can see and change.</div>
+          <div style={{ fontSize: 12.5, color: '#78908A', marginTop: 2 }}>What each of the 5 fixed roles can see and change.</div>
         </div>
       </div>
 
@@ -93,7 +93,7 @@ export default function AdminRoles({ currentUser }) {
           : "👁 You can view what each role can access. Only Admins can change it."}
       </div>
 
-      {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
+      {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
       {error && <div style={errorBannerStyle}>{error}</div>}
 
       {!loading && !error && (
@@ -111,24 +111,24 @@ export default function AdminRoles({ currentUser }) {
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     padding: '12px 14px',
-                    borderBottom: '1px solid #F0F2F4',
+                    borderBottom: '1px solid #E9F1EF',
                     cursor: 'pointer',
                     fontSize: 13,
-                    background: active ? '#EEF2FF' : 'transparent',
+                    background: active ? '#E4F0EF' : 'transparent',
                   }}
                 >
                   <span style={{ fontWeight: active ? 700 : 500 }}>{USER_ROLE_META[r].label}</span>
-                  <span style={{ color: '#9AA0A6', fontSize: 11.5 }}>{count} user{count === 1 ? '' : 's'}</span>
+                  <span style={{ color: '#78908A', fontSize: 11.5 }}>{count} user{count === 1 ? '' : 's'}</span>
                 </div>
               );
             })}
           </div>
 
           <div style={cardStyle}>
-            <div style={{ padding: '14px 16px', borderBottom: '1px solid #E4E8EB', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid #D7E4E1', display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{USER_ROLE_META[selectedRole].label}</div>
               {selectedRole === 'Admin' && isAdmin && (
-                <span style={{ fontSize: 11.5, color: '#B45309' }}>Careful — this affects every Admin, including you.</span>
+                <span style={{ fontSize: 11.5, color: '#8A5A16' }}>Careful — this affects every Admin, including you.</span>
               )}
             </div>
             {saveError && <div style={{ ...errorBannerStyle, margin: '12px 16px 0' }}>{saveError}</div>}

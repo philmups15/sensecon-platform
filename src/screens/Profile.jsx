@@ -4,15 +4,15 @@ import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
 import { getCurrentUser, updateProfile, uploadAvatar, deleteAvatar, changePassword, USER_ROLE_META } from '../lib/api';
 
-const cardStyle = { background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: '20px 22px', marginBottom: 16 };
-const fieldLabelStyle = { fontSize: 11, fontWeight: 700, color: '#9AA0A6', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 };
-const fieldValueStyle = { fontSize: 14, color: '#141719' };
-const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '9px 11px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' };
-const primaryBtnStyle = { padding: '8px 16px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 };
-const secondaryBtnStyle = { padding: '8px 16px', background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 12.5, cursor: 'pointer' };
-const linkBtnStyle = { background: 'none', border: 'none', color: '#2563EB', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', padding: 0 };
-const errorStyle = { marginBottom: 14, padding: '9px 11px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 };
-const noticeStyle = { marginBottom: 14, padding: '9px 11px', background: '#E7F4EC', color: '#15803D', borderRadius: 8, fontSize: 12.5 };
+const cardStyle = { background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: '20px 22px', marginBottom: 16 };
+const fieldLabelStyle = { fontSize: 11, fontWeight: 700, color: '#78908A', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 };
+const fieldValueStyle = { fontSize: 14, color: '#12201F' };
+const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '9px 11px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' };
+const primaryBtnStyle = { padding: '8px 16px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 };
+const secondaryBtnStyle = { padding: '8px 16px', background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 12.5, cursor: 'pointer' };
+const linkBtnStyle = { background: 'none', border: 'none', color: '#1F6E72', fontWeight: 600, fontSize: 12.5, cursor: 'pointer', padding: 0 };
+const errorStyle = { marginBottom: 14, padding: '9px 11px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 };
+const noticeStyle = { marginBottom: 14, padding: '9px 11px', background: '#E3F8EC', color: '#1C8A4E', borderRadius: 8, fontSize: 12.5 };
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -142,10 +142,10 @@ export default function Profile({ currentUser, onUserUpdate }) {
   };
 
   if (loading) {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading profile…</div>;
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading profile…</div>;
   }
   if (error) {
-    return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+    return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
   }
 
   const roleMeta = USER_ROLE_META[user.role] || USER_ROLE_META.User;
@@ -165,8 +165,8 @@ export default function Profile({ currentUser, onUserUpdate }) {
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 19, fontWeight: 800, color: '#141719' }}>{user.displayName}</div>
-            {user.jobDescription && <div style={{ fontSize: 13, color: '#6A7178', marginTop: 2 }}>{user.jobDescription}</div>}
+            <div style={{ fontSize: 19, fontWeight: 800, color: '#12201F' }}>{user.displayName}</div>
+            {user.jobDescription && <div style={{ fontSize: 13, color: '#52685F', marginTop: 2 }}>{user.jobDescription}</div>}
             <div style={{ marginTop: 8 }}>
               <Chip label={roleMeta.label} tone={roleMeta.tone} />
             </div>
@@ -177,7 +177,7 @@ export default function Profile({ currentUser, onUserUpdate }) {
               {user.hasAvatar ? 'Change photo' : 'Add photo'}
             </button>
             {user.hasAvatar && (
-              <button type="button" onClick={handleRemoveAvatar} disabled={avatarBusy} style={{ ...linkBtnStyle, color: '#B42318' }}>
+              <button type="button" onClick={handleRemoveAvatar} disabled={avatarBusy} style={{ ...linkBtnStyle, color: '#A6362E' }}>
                 Remove photo
               </button>
             )}
@@ -222,7 +222,7 @@ export default function Profile({ currentUser, onUserUpdate }) {
               </div>
               <div>
                 <div style={fieldLabelStyle}>Email</div>
-                <div style={{ ...fieldValueStyle, padding: '9px 0', color: '#9AA0A6' }}>{user.email} (can't be changed here)</div>
+                <div style={{ ...fieldValueStyle, padding: '9px 0', color: '#78908A' }}>{user.email} (can't be changed here)</div>
               </div>
               <div>
                 <div style={fieldLabelStyle}>Username</div>

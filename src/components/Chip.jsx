@@ -1,10 +1,10 @@
 const TONES = {
-  blue: { bg: '#EAF0FE', fg: '#1E4FC4', dot: '#2563EB' },
-  green: { bg: '#E7F4EC', fg: '#15803D', dot: '#15803D' },
-  amber: { bg: '#FBF0E2', fg: '#B45309', dot: '#B45309' },
-  red: { bg: '#FBE9E7', fg: '#B42318', dot: '#B42318' },
-  violet: { bg: '#F0EAFB', fg: '#6D28D9', dot: '#6D28D9' },
-  slate: { bg: '#EEF1F4', fg: '#334155', dot: '#334155' },
+  blue: { bg: '#E4F0EF', fg: '#12484B', dot: '#1F6E72' },
+  green: { bg: '#E3F8EC', fg: '#1C8A4E', dot: '#1C8A4E' },
+  amber: { bg: '#FBF0DC', fg: '#8A5A16', dot: '#8A5A16' },
+  red: { bg: '#FBE7E5', fg: '#A6362E', dot: '#A6362E' },
+  violet: { bg: '#E4F0EF', fg: '#2E9E8F', dot: '#2E9E8F' },
+  slate: { bg: '#E9F1EF', fg: '#52685F', dot: '#52685F' },
 };
 
 export default function Chip({ label, tone }) {

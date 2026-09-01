@@ -11,14 +11,14 @@ function buildNodes(stage, dates = {}) {
   const curIdx = STAGES.indexOf(stage);
   return STAGES.map((s, i) => {
     const state = i < curIdx ? 'past' : i === curIdx ? 'current' : 'upcoming';
-    let circleBg = '#FFFFFF', circleFg = '#9AA0A6', circleBorder = '#D2D8DC', labelColor = '#9AA0A6', mark = i + 1;
-    if (state === 'past') { circleBg = '#2563EB'; circleFg = '#FFFFFF'; circleBorder = '#2563EB'; labelColor = '#3B4147'; mark = '✓'; }
-    if (state === 'current') { circleBg = '#EAF0FE'; circleFg = '#1E4FC4'; circleBorder = '#2563EB'; labelColor = '#141719'; }
+    let circleBg = '#FFFFFF', circleFg = '#78908A', circleBorder = '#D7E4E1', labelColor = '#78908A', mark = i + 1;
+    if (state === 'past') { circleBg = '#1F6E72'; circleFg = '#FFFFFF'; circleBorder = '#1F6E72'; labelColor = '#12201F'; mark = '✓'; }
+    if (state === 'current') { circleBg = '#E4F0EF'; circleFg = '#12484B'; circleBorder = '#1F6E72'; labelColor = '#12201F'; }
     return {
       label: LABELS[s], mark, circleBg, circleFg, circleBorder, labelColor,
       date: dates[s] || (state === 'upcoming' ? '—' : ''),
       hasLine: i < STAGES.length - 1,
-      lineColor: i < curIdx ? '#2563EB' : '#D2D8DC',
+      lineColor: i < curIdx ? '#1F6E72' : '#D7E4E1',
     };
   });
 }
@@ -74,7 +74,7 @@ export default function LifecycleTimeline({ stage = 'operating', variant = 'full
               {node.mark}
             </div>
             <div style={{ marginTop: 8, fontSize: 13, fontWeight: 600, color: node.labelColor }}>{node.label}</div>
-            <div style={{ marginTop: 2, fontSize: 11, color: '#6A7178', fontFamily: 'SF Mono, Consolas, monospace' }}>
+            <div style={{ marginTop: 2, fontSize: 11, color: '#52685F', fontFamily: 'SF Mono, Consolas, monospace' }}>
               {node.date}
             </div>
           </div>

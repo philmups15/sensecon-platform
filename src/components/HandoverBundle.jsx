@@ -9,18 +9,18 @@ const DEFAULT_ITEMS = [
 
 export default function HandoverBundle({ items = DEFAULT_ITEMS, generatedDate = '12 Jun 2026' }) {
   return (
-    <div style={{ border: '1px solid #E4E8EB', borderRadius: 12, background: '#FFFFFF', overflow: 'hidden' }}>
+    <div style={{ border: '1px solid #D7E4E1', borderRadius: 12, background: '#FFFFFF', overflow: 'hidden' }}>
       <div
         style={{
           padding: '14px 18px',
-          borderBottom: '1px solid #E4E8EB',
+          borderBottom: '1px solid #D7E4E1',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#141719' }}>Handover bundle</div>
-        <div style={{ fontSize: 12, color: '#6A7178' }}>Generated {generatedDate}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#12201F' }}>Handover bundle</div>
+        <div style={{ fontSize: 12, color: '#52685F' }}>Generated {generatedDate}</div>
       </div>
       {items.map((item, i) => (
         <div
@@ -30,7 +30,7 @@ export default function HandoverBundle({ items = DEFAULT_ITEMS, generatedDate = 
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '11px 18px',
-            borderBottom: '1px solid #F0F2F4',
+            borderBottom: '1px solid #E9F1EF',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -39,31 +39,31 @@ export default function HandoverBundle({ items = DEFAULT_ITEMS, generatedDate = 
                 width: 28,
                 height: 28,
                 borderRadius: 8,
-                background: '#F4F6F8',
+                background: '#F4F8F7',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 12,
                 fontWeight: 700,
-                color: '#6A7178',
+                color: '#52685F',
               }}
             >
               {item.ext}
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#141719' }}>{item.name}</div>
-              <div style={{ fontSize: 11.5, color: '#9AA0A6' }}>{item.meta}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#12201F' }}>{item.name}</div>
+              <div style={{ fontSize: 11.5, color: '#78908A' }}>{item.meta}</div>
             </div>
           </div>
           <button
             style={{
-              border: '1px solid #D2D8DC',
+              border: '1px solid #D7E4E1',
               background: '#FFFFFF',
               borderRadius: 8,
               padding: '5px 12px',
               fontSize: 12,
               fontWeight: 600,
-              color: '#334155',
+              color: '#52685F',
               cursor: 'pointer',
             }}
           >

@@ -84,11 +84,11 @@ export default function AdminIntegrations() {
       <div style={sectionHeaderStyle}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 700 }}>Integrations</div>
-          <div style={{ fontSize: 12.5, color: '#9AA0A6', marginTop: 2 }}>Connect and configure the services this tenant relies on.</div>
+          <div style={{ fontSize: 12.5, color: '#78908A', marginTop: 2 }}>Connect and configure the services this tenant relies on.</div>
         </div>
       </div>
 
-      {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
+      {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
       {error && <div style={errorBannerStyle}>{error}</div>}
 
       {!loading && !error && (
@@ -103,7 +103,7 @@ export default function AdminIntegrations() {
               </div>
 
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#334155', marginBottom: 4 }}>Provider / endpoint</div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#52685F', marginBottom: 4 }}>Provider / endpoint</div>
                 <input
                   value={providerEndpoint}
                   onChange={(e) => setProviderEndpoint(e.target.value)}
@@ -113,7 +113,7 @@ export default function AdminIntegrations() {
               </div>
 
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#334155', marginBottom: 4 }}>API key or credential</div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#52685F', marginBottom: 4 }}>API key or credential</div>
                 <input
                   type="password"
                   value={apiKey}
@@ -123,7 +123,7 @@ export default function AdminIntegrations() {
                   style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', opacity: clearApiKey ? 0.5 : 1 }}
                 />
                 {current.hasApiKey && (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11.5, color: '#6A7178' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11.5, color: '#52685F' }}>
                     <input type="checkbox" checked={clearApiKey} onChange={(e) => { setClearApiKey(e.target.checked); if (e.target.checked) setApiKey(''); }} />
                     Remove the saved key
                   </label>
@@ -131,7 +131,7 @@ export default function AdminIntegrations() {
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#334155', marginBottom: 4 }}>Notes</div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#52685F', marginBottom: 4 }}>Notes</div>
                 <input
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -142,7 +142,7 @@ export default function AdminIntegrations() {
 
               {saveError && <div style={{ ...errorBannerStyle, marginBottom: 12 }}>{saveError}</div>}
               {saveMessage && (
-                <div style={{ marginBottom: 12, padding: '9px 11px', background: '#F0F2F4', borderRadius: 8, fontSize: 12, color: '#334155' }}>
+                <div style={{ marginBottom: 12, padding: '9px 11px', background: '#E9F1EF', borderRadius: 8, fontSize: 12, color: '#52685F' }}>
                   {saveMessage}
                 </div>
               )}
@@ -155,7 +155,7 @@ export default function AdminIntegrations() {
               </div>
 
               {current.lastModified && (
-                <div style={{ fontSize: 11, color: '#9AA0A6', marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: '#78908A', marginTop: 12 }}>
                   Last updated {new Date(current.lastModified).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                 </div>
               )}

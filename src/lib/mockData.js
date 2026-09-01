@@ -49,32 +49,32 @@ export const notifications = [
 ];
 
 export const kpis = [
-  { label: 'Operating plants', value: '27', trend: '+2 this quarter', trendColor: '#15803D' },
-  { label: 'In delivery', value: '9', trend: '3 in commissioning', trendColor: '#B45309' },
-  { label: 'Open work orders', value: '46', trend: '6 breaching SLA', trendColor: '#B42318' },
-  { label: 'Pipeline value', value: '$4.2M', trend: '14 open opportunities', trendColor: '#6A7178' },
+  { label: 'Operating plants', value: '27', trend: '+2 this quarter', trendColor: '#1C8A4E' },
+  { label: 'In delivery', value: '9', trend: '3 in commissioning', trendColor: '#8A5A16' },
+  { label: 'Open work orders', value: '46', trend: '6 breaching SLA', trendColor: '#A6362E' },
+  { label: 'Pipeline value', value: '$4.2M', trend: '14 open opportunities', trendColor: '#52685F' },
 ];
 
 export const mapPins = [
-  { name: 'Lusaka Ridge C&I', x: '48%', y: '62%', color: '#2563EB' },
-  { name: 'Kitwe Industrial Park', x: '58%', y: '22%', color: '#2563EB' },
-  { name: 'Ndola Cold Storage', x: '66%', y: '26%', color: '#B45309' },
-  { name: 'Livingstone Lodge', x: '40%', y: '88%', color: '#15803D' },
+  { name: 'Lusaka Ridge C&I', x: '48%', y: '62%', color: '#1F6E72' },
+  { name: 'Kitwe Industrial Park', x: '58%', y: '22%', color: '#1F6E72' },
+  { name: 'Ndola Cold Storage', x: '66%', y: '26%', color: '#8A5A16' },
+  { name: 'Livingstone Lodge', x: '40%', y: '88%', color: '#1C8A4E' },
 ];
 
 export const stageDist = [
-  { label: 'Operating', count: 27, color: '#2563EB' },
-  { label: 'Commissioning', count: 5, color: '#6D28D9' },
-  { label: 'Deployment', count: 4, color: '#B45309' },
-  { label: 'Design & survey', count: 9, color: '#15803D' },
+  { label: 'Operating', count: 27, color: '#1F6E72' },
+  { label: 'Commissioning', count: 5, color: '#2E9E8F' },
+  { label: 'Deployment', count: 4, color: '#8A5A16' },
+  { label: 'Design & survey', count: 9, color: '#1C8A4E' },
 ];
 
 export const activity = [
-  { who: 'Mwansa B.', what: 'signed off survey SRV-0148', time: '42 min ago', color: '#15803D' },
-  { who: 'Field team 3', what: 'closed WO-2288 at Kitwe Industrial Park', time: '2h ago', color: '#2563EB' },
-  { who: 'Chanda K.', what: 'moved Mukuba Steel to Proposal', time: '3h ago', color: '#6D28D9' },
-  { who: 'System', what: 'flagged inverter fault at Ndola Cold Storage', time: '5h ago', color: '#B42318' },
-  { who: 'Temba N.', what: 'submitted commissioning test results — AC side', time: 'Yesterday', color: '#B45309' },
+  { who: 'Mwansa B.', what: 'signed off survey SRV-0148', time: '42 min ago', color: '#1C8A4E' },
+  { who: 'Field team 3', what: 'closed WO-2288 at Kitwe Industrial Park', time: '2h ago', color: '#1F6E72' },
+  { who: 'Chanda K.', what: 'moved Mukuba Steel to Proposal', time: '3h ago', color: '#2E9E8F' },
+  { who: 'System', what: 'flagged inverter fault at Ndola Cold Storage', time: '5h ago', color: '#A6362E' },
+  { who: 'Temba N.', what: 'submitted commissioning test results — AC side', time: 'Yesterday', color: '#8A5A16' },
 ];
 
 export const attentionPlants = [
@@ -139,7 +139,7 @@ export const designFieldsByTab = {
   string: [['Strings per inverter', '12'], ['Modules per string', '22'], ['String voltage (Voc)', '812 V']],
   cabling: [['DC cable', '6mm² double-insulated, UV-rated'], ['AC cable', '4-core XLPE, 95mm²'], ['Cable runs', 'Tray-mounted, 180m total']],
   protection: [['DC protection', 'String fuses + Type II SPD'], ['AC protection', '400A ACB + earth fault relay'], ['Arc fault', 'AFDD integrated, inverter-side']],
-  monitoring: [['Platform', 'Sensecon monitoring gateway'], ['Metering', 'Class 0.5S revenue meter'], ['Comms', '4G primary, Ethernet fallback']],
+  monitoring: [['Platform', 'Sencecon monitoring gateway'], ['Metering', 'Class 0.5S revenue meter'], ['Comms', '4G primary, Ethernet fallback']],
 };
 
 export const revisions = [
@@ -192,13 +192,13 @@ export const milestones = [
   { label: 'Commissioning', state: 'upcoming' },
 ].map((m) => ({
   ...m,
-  color: m.state === 'done' ? '#2563EB' : m.state === 'current' ? '#1E4FC4' : '#D2D8DC',
-  bg: m.state === 'upcoming' ? '#FFFFFF' : m.state === 'current' ? '#EAF0FE' : '#2563EB',
+  color: m.state === 'done' ? '#1F6E72' : m.state === 'current' ? '#12484B' : '#D7E4E1',
+  bg: m.state === 'upcoming' ? '#FFFFFF' : m.state === 'current' ? '#E4F0EF' : '#1F6E72',
 }));
 
 export const tasks = [
   { name: 'Racking installation — Zone A', owner: 'MetalWorks Zambia', due: '2 Aug 2026', status: 'In progress', tone: 'blue' },
-  { name: 'Inverter mounting', owner: 'Sensecon field team', due: '6 Aug 2026', status: 'Blocked', tone: 'red' },
+  { name: 'Inverter mounting', owner: 'Sencecon field team', due: '6 Aug 2026', status: 'Blocked', tone: 'red' },
   { name: 'DC cabling', owner: 'Copperbelt Electrical', due: '10 Aug 2026', status: 'Not started', tone: 'slate' },
 ];
 
@@ -262,7 +262,7 @@ export const woChecklist = [
   { item: 'Isolate string before work', done: true },
   { item: 'Replace filter media', done: true },
   { item: 'Function test airflow', done: false },
-].map((c) => ({ ...c, boxColor: c.done ? '#2563EB' : '#FFFFFF' }));
+].map((c) => ({ ...c, boxColor: c.done ? '#1F6E72' : '#FFFFFF' }));
 
 export const woParts = [{ part: 'HVAC filter (20x20x1)', qty: 2 }];
 export const woDeviations = [{ note: 'Filter housing bracket corroded — logged for replacement', tone: 'amber' }];

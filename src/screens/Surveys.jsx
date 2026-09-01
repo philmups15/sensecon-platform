@@ -20,16 +20,16 @@ const linkBtnStyle = {
   padding: '3px 6px',
   border: 'none',
   background: 'transparent',
-  color: '#2563EB',
+  color: '#1F6E72',
   fontSize: 11,
   fontWeight: 700,
   cursor: 'pointer',
 };
-const dangerBtnStyle = { ...linkBtnStyle, color: '#B42318' };
-const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#334155', marginBottom: 5 };
-const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, marginBottom: 12 };
-const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D2D8DC', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
-const primaryBtnStyle = { padding: '9px 16px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
+const dangerBtnStyle = { ...linkBtnStyle, color: '#A6362E' };
+const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#52685F', marginBottom: 5 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 12 };
+const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
+const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
 
 const EMPTY_FORM = { plantName: '', surveyor: '', date: '', status: 'Scheduled', projectId: '' };
 
@@ -77,8 +77,8 @@ export default function Surveys({ currentUser }) {
 
   useEffect(load, []);
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading surveys…</div>;
-  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading surveys…</div>;
+  if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
 
   const detail = surveys.find((s) => s.entityId === selectedId);
 
@@ -196,22 +196,22 @@ export default function Surveys({ currentUser }) {
         <div style={{ flex: 1 }} />
         {canWrite && <button onClick={openAddForm} style={primaryBtnStyle}>+ Add survey</button>}
       </div>
-      {deleteError && <div style={{ padding: '8px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
+      {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
 
-      {surveys.length === 0 && <div style={{ padding: 20, color: '#6A7178' }}>No surveys yet.</div>}
+      {surveys.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No surveys yet.</div>}
 
       {surveys.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 16, alignItems: 'start' }}>
-          <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
             {surveys.map((sv) => (
-              <div key={sv.entityId} onClick={() => setSelectedId(sv.entityId)} style={{ padding: '13px 16px', borderBottom: '1px solid #F0F2F4', cursor: 'pointer', background: sv.entityId === selectedId ? '#F5F8FF' : 'transparent' }}>
+              <div key={sv.entityId} onClick={() => setSelectedId(sv.entityId)} style={{ padding: '13px 16px', borderBottom: '1px solid #E9F1EF', cursor: 'pointer', background: sv.entityId === selectedId ? '#E4F0EF' : 'transparent' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{sv.plant}</div>
                 </div>
-                <div style={{ fontSize: 11, color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace', margin: '3px 0 5px' }}>
+                <div style={{ fontSize: 11, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', margin: '3px 0 5px' }}>
                   {sv.id} · {sv.date}
                 </div>
-                {sv.projectName && <div style={{ fontSize: 11, color: '#2563EB', fontWeight: 600, marginBottom: 6 }}>{sv.projectName}</div>}
+                {sv.projectName && <div style={{ fontSize: 11, color: '#1F6E72', fontWeight: 600, marginBottom: 6 }}>{sv.projectName}</div>}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Chip label={sv.status} tone={sv.tone} />
                   {canWrite && (deletingId === sv.entityId ? <Spinner size={11} /> : <button type="button" onClick={(e) => { e.stopPropagation(); removeSurvey(sv); }} style={dangerBtnStyle}>Delete</button>)}
@@ -221,13 +221,13 @@ export default function Surveys({ currentUser }) {
           </div>
 
           {detail && (
-            <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 20 }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   {!editing && <div style={{ fontSize: 15, fontWeight: 700 }}>{detail.plant}</div>}
-                  <div style={{ fontSize: 12, color: '#9AA0A6', marginTop: 4 }}>
+                  <div style={{ fontSize: 12, color: '#78908A', marginTop: 4 }}>
                     {detail.id} · Surveyor {detail.surveyor || '—'} · {detail.date}
-                    {detail.projectName && <> · <span style={{ color: '#2563EB', fontWeight: 600 }}>{detail.projectName}</span></>}
+                    {detail.projectName && <> · <span style={{ color: '#1F6E72', fontWeight: 600 }}>{detail.projectName}</span></>}
                   </div>
                 </div>
                 {canWrite && !editing && (
@@ -238,15 +238,15 @@ export default function Surveys({ currentUser }) {
                 )}
                 {editing && (
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <button onClick={cancelEdit} disabled={saving} style={{ ...linkBtnStyle, color: '#9AA0A6' }}>Cancel</button>
-                    <button onClick={saveEdit} disabled={saving} style={{ border: 'none', background: '#2563EB', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button onClick={cancelEdit} disabled={saving} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
+                    <button onClick={saveEdit} disabled={saving} style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                       {saving && <Spinner size={11} color="#fff" />}Save
                     </button>
                   </div>
                 )}
               </div>
 
-              {saveError && <div style={{ marginTop: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{saveError}</div>}
+              {saveError && <div style={{ marginTop: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{saveError}</div>}
 
               {editing ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
@@ -282,11 +282,11 @@ export default function Surveys({ currentUser }) {
                 </div>
               ) : (
                 <div style={{ marginTop: 16 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6A7178', marginBottom: 5 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#52685F', marginBottom: 5 }}>
                     <span>Checklist progress</span><span>{detail.progress}%</span>
                   </div>
-                  <div style={{ height: 8, background: '#F0F2F4', borderRadius: 999 }}>
-                    <div style={{ height: 8, width: `${detail.progress}%`, background: '#2563EB', borderRadius: 999 }} />
+                  <div style={{ height: 8, background: '#E9F1EF', borderRadius: 999 }}>
+                    <div style={{ height: 8, width: `${detail.progress}%`, background: '#1F6E72', borderRadius: 999 }} />
                   </div>
                 </div>
               )}
@@ -294,7 +294,7 @@ export default function Surveys({ currentUser }) {
               <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 20, marginBottom: 8 }}>Photo capture</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 8 }}>
                 {surveyPhotos.map((p) => (
-                  <div key={p.id} style={{ aspectRatio: '1', background: '#F4F6F8', border: '1px dashed #D2D8DC', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, color: '#9AA0A6', textAlign: 'center', padding: 4 }}>
+                  <div key={p.id} style={{ aspectRatio: '1', background: '#F4F8F7', border: '1px dashed #D7E4E1', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, color: '#78908A', textAlign: 'center', padding: 4 }}>
                     {p.label}
                   </div>
                 ))}
@@ -304,31 +304,31 @@ export default function Surveys({ currentUser }) {
                 <div>
                   <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Measurements</div>
                   {measurements.map((m, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #F0F2F4', fontSize: 12.5 }}>
-                      <span style={{ color: '#6A7178' }}>{m.field}</span>
-                      <span style={{ fontWeight: 600, color: '#141719' }}>{m.value}</span>
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
+                      <span style={{ color: '#52685F' }}>{m.field}</span>
+                      <span style={{ fontWeight: 600, color: '#12201F' }}>{m.value}</span>
                     </div>
                   ))}
                 </div>
                 <div>
                   <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Obstructions & shading</div>
                   {obstructions.map((ob, i) => (
-                    <div key={i} style={{ padding: '7px 0', borderBottom: '1px solid #F0F2F4', fontSize: 12.5 }}>
-                      <div style={{ fontWeight: 600, color: '#141719' }}>{ob.item}</div>
-                      <div style={{ color: '#9AA0A6' }}>{ob.impact}</div>
+                    <div key={i} style={{ padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
+                      <div style={{ fontWeight: 600, color: '#12201F' }}>{ob.item}</div>
+                      <div style={{ color: '#78908A' }}>{ob.impact}</div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {signOffError && <div style={{ marginTop: 16, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{signOffError}</div>}
+              {signOffError && <div style={{ marginTop: 16, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{signOffError}</div>}
               {canWrite && detail.statusKey !== 'SignedOff' && (
-                <button onClick={signOff} disabled={signingOff} style={{ marginTop: 20, padding: '10px 18px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: signingOff ? 0.7 : 1 }}>
+                <button onClick={signOff} disabled={signingOff} style={{ marginTop: 20, padding: '10px 18px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, opacity: signingOff ? 0.7 : 1 }}>
                   {signingOff && <Spinner size={12} color="#fff" />}Sign off survey
                 </button>
               )}
               {detail.statusKey === 'SignedOff' && (
-                <div style={{ marginTop: 20, background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#047857', fontWeight: 700, fontSize: 13, padding: '12px 16px', borderRadius: 10, display: 'inline-block' }}>✓ Signed off</div>
+                <div style={{ marginTop: 20, background: '#E3F8EC', border: '1px solid #BFE9CE', color: '#1C8A4E', fontWeight: 700, fontSize: 13, padding: '12px 16px', borderRadius: 10, display: 'inline-block' }}>✓ Signed off</div>
               )}
             </div>
           )}
@@ -336,8 +336,8 @@ export default function Surveys({ currentUser }) {
       )}
 
       {showAddForm && (
-        <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,25,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 440, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(20,23,25,0.2)' }}>
+        <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 440, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Add site survey</div>
 
             <div style={fieldLabelStyle}>Plant / site name *</div>
@@ -365,11 +365,11 @@ export default function Surveys({ currentUser }) {
               {STATUS_ENTRIES.map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
             </select>
 
-            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
+            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {creating && <Spinner size={12} color="#fff" />}Add survey
               </button>
             </div>

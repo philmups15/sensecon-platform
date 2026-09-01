@@ -1,8 +1,12 @@
 body {
   margin: 0;
-  font-family: -apple-system, 'SF Pro Text', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  background: #F4F6F8;
-  color: #141719;
+  font-family: 'Source Sans 3', -apple-system, sans-serif;
+  background: #F4F8F7;
+  color: #12201F;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Manrope', -apple-system, sans-serif;
 }
 
 ::-webkit-scrollbar {
@@ -11,16 +15,16 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D2D8DC;
+  background: #D7E4E1;
   border-radius: 8px;
 }
 
 a {
-  color: #2563EB;
+  color: #1F6E72;
 }
 
 a:hover {
-  color: #1E4FC4;
+  color: #12484B;
 }
 
 button {

@@ -73,9 +73,9 @@ export default function ProfileMenu({ open, onToggle, onNavigate, onLogout }) {
             right: 20,
             width: 280,
             background: '#FFFFFF',
-            border: '1px solid #E4E8EB',
+            border: '1px solid #D7E4E1',
             borderRadius: 12,
-            boxShadow: '0 8px 24px rgba(20,23,25,0.12)',
+            boxShadow: '0 8px 24px rgba(18,32,31,0.12)',
             zIndex: 20,
             overflow: 'hidden',
           }}
@@ -85,8 +85,8 @@ export default function ProfileMenu({ open, onToggle, onNavigate, onLogout }) {
               <div style={{ padding: 16, display: 'flex', gap: 12, alignItems: 'center' }}>
                 <Avatar userId={user?.id} name={user?.displayName} hasAvatar={user?.hasAvatar} size={40} fontSize={14} />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141719', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.displayName || 'Loading…'}</div>
-                  <div style={{ fontSize: 11.5, color: '#9AA0A6', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#12201F', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.displayName || 'Loading…'}</div>
+                  <div style={{ fontSize: 11.5, color: '#78908A', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.email}</div>
                 </div>
               </div>
               {roleMeta && (
@@ -94,17 +94,17 @@ export default function ProfileMenu({ open, onToggle, onNavigate, onLogout }) {
                   <Chip label={roleMeta.label} tone={roleMeta.tone} />
                 </div>
               )}
-              {notice && <div style={{ margin: '0 16px 12px', padding: '8px 10px', background: '#E7F4EC', color: '#15803D', borderRadius: 8, fontSize: 12 }}>{notice}</div>}
-              <div style={{ borderTop: '1px solid #E4E8EB' }}>
-                <div onClick={() => onNavigate('profile')} style={{ padding: '11px 16px', fontSize: 13, color: '#334155', cursor: 'pointer' }}>
+              {notice && <div style={{ margin: '0 16px 12px', padding: '8px 10px', background: '#E3F8EC', color: '#1C8A4E', borderRadius: 8, fontSize: 12 }}>{notice}</div>}
+              <div style={{ borderTop: '1px solid #D7E4E1' }}>
+                <div onClick={() => onNavigate('profile')} style={{ padding: '11px 16px', fontSize: 13, color: '#52685F', cursor: 'pointer' }}>
                   View full profile
                 </div>
-                <div onClick={() => openMode('change-password')} style={{ padding: '11px 16px', fontSize: 13, color: '#334155', cursor: 'pointer' }}>
+                <div onClick={() => openMode('change-password')} style={{ padding: '11px 16px', fontSize: 13, color: '#52685F', cursor: 'pointer' }}>
                   Change password
                 </div>
               </div>
-              <div style={{ borderTop: '1px solid #E4E8EB' }}>
-                <div onClick={onLogout} style={{ padding: '11px 16px', fontSize: 13, color: '#B42318', cursor: 'pointer', fontWeight: 600 }}>
+              <div style={{ borderTop: '1px solid #D7E4E1' }}>
+                <div onClick={onLogout} style={{ padding: '11px 16px', fontSize: 13, color: '#A6362E', cursor: 'pointer', fontWeight: 600 }}>
                   Log out
                 </div>
               </div>
@@ -114,38 +114,38 @@ export default function ProfileMenu({ open, onToggle, onNavigate, onLogout }) {
           {mode === 'change-password' && (
             <form onSubmit={savePassword} style={{ padding: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Change password</div>
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: '#334155', marginBottom: 5 }}>Current password</div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>Current password</div>
               <input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
-                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, marginBottom: 10 }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 10 }}
               />
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: '#334155', marginBottom: 5 }}>New password</div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>New password</div>
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
                 minLength={8}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, marginBottom: 10 }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 10 }}
               />
-              <div style={{ fontSize: 11.5, fontWeight: 600, color: '#334155', marginBottom: 5 }}>Confirm new password</div>
+              <div style={{ fontSize: 11.5, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>Confirm new password</div>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength={8}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, marginBottom: 12 }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 12 }}
               />
-              {error && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{error}</div>}
+              {error && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{error}</div>}
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" onClick={() => openMode('view')} style={{ flex: 1, padding: 9, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }}>
+                <button type="button" onClick={() => openMode('view')} style={{ flex: 1, padding: 9, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 12.5, cursor: 'pointer' }}>
                   Cancel
                 </button>
-                <button type="submit" disabled={saving} style={{ flex: 1, padding: 9, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <button type="submit" disabled={saving} style={{ flex: 1, padding: 9, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   {saving && <Spinner size={12} color="#fff" />}
                   Save
                 </button>

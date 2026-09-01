@@ -93,7 +93,7 @@ export default function App() {
   if (screen === 'reset-password') {
     const token = new URLSearchParams(window.location.search).get('resetToken');
     return (
-      <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F6F8', overflow: 'hidden', fontSize: 14 }}>
+      <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F8F7', overflow: 'hidden', fontSize: 14 }}>
         <ResetPassword token={token} onDone={handleResetDone} />
       </div>
     );
@@ -101,7 +101,7 @@ export default function App() {
 
   if (screen === 'login') {
     return (
-      <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F6F8', overflow: 'hidden', fontSize: 14 }}>
+      <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F8F7', overflow: 'hidden', fontSize: 14 }}>
         <Login onSignIn={handleSignIn} />
       </div>
     );
@@ -110,7 +110,7 @@ export default function App() {
   const Screen = SCREENS[screen] || Dashboard;
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F6F8', overflow: 'hidden', position: 'relative', fontSize: 14 }}>
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#F4F8F7', overflow: 'hidden', position: 'relative', fontSize: 14 }}>
       <Sidebar screen={screen} onNavigate={go} onLogout={handleLogout} currentUser={currentUser} />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -126,7 +126,7 @@ export default function App() {
           onLogout={handleLogout}
         />
 
-        <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px', background: '#F4F6F8' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px', background: '#F4F8F7' }}>
           <Screen currentUser={currentUser} onUserUpdate={setCurrentUser} onNavigate={go} />
         </div>
       </div>

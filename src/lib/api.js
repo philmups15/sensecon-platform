@@ -400,11 +400,11 @@ export function formatRelative(iso) {
 }
 
 const ACTIVITY_DOT_COLOR = {
-  stage: '#2563EB',
-  note: '#B45309',
-  document: '#6D28D9',
-  created: '#15803D',
-  edit: '#9AA0A6',
+  stage: '#1F6E72',
+  note: '#8A5A16',
+  document: '#2E9E8F',
+  created: '#1C8A4E',
+  edit: '#78908A',
 };
 
 export function toOpportunityView(dto) {
@@ -447,7 +447,7 @@ export function toOpportunityView(dto) {
       text: a.text,
       who: a.userName,
       tsLabel: formatRelative(a.created),
-      dotColor: ACTIVITY_DOT_COLOR[a.type] || '#9AA0A6',
+      dotColor: ACTIVITY_DOT_COLOR[a.type] || '#78908A',
     })),
   };
 }

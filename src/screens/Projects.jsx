@@ -22,18 +22,18 @@ const linkBtnStyle = {
   padding: '3px 6px',
   border: 'none',
   background: 'transparent',
-  color: '#2563EB',
+  color: '#1F6E72',
   fontSize: 11,
   fontWeight: 700,
   cursor: 'pointer',
 };
-const dangerBtnStyle = { ...linkBtnStyle, color: '#B42318' };
-const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#334155', marginBottom: 5 };
-const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, marginBottom: 12 };
-const cardStyle = { background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: '20px 22px', marginBottom: 16 };
-const cardHeaderStyle = { fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6' };
-const primaryBtnStyle = { padding: '9px 16px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
-const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D2D8DC', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
+const dangerBtnStyle = { ...linkBtnStyle, color: '#A6362E' };
+const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#52685F', marginBottom: 5 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 12 };
+const cardStyle = { background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: '20px 22px', marginBottom: 16 };
+const cardHeaderStyle = { fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A' };
+const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
+const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
 
 const EMPTY_FORM = { name: '', customer: '', stage: 'DesignSurvey', projectManager: '', budget: '', actual: '' };
 const EMPTY_SURVEY_FORM = { plantName: '', surveyor: '', date: '', status: 'Scheduled' };
@@ -88,8 +88,8 @@ export default function Projects({ currentUser }) {
 
   const refreshSurveys = () => getSurveys().then((dtos) => setSurveys(dtos.map(toSurveyView)));
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading projects…</div>;
-  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading projects…</div>;
+  if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
 
   const detail = projects.find((p) => p.id === selectedId) || projects.find((p) => p.entityId === selectedId);
 
@@ -228,18 +228,18 @@ export default function Projects({ currentUser }) {
         )}
       </div>
 
-      {deleteError && <div style={{ padding: '8px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
+      {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
 
-      {projects.length === 0 && <div style={{ padding: 20, color: '#6A7178' }}>No projects yet.</div>}
+      {projects.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No projects yet.</div>}
 
       {projects.length > 0 && (
-        <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.3fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6', borderBottom: '1px solid #E4E8EB' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.3fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1' }}>
             <div>Project</div><div>Stage</div><div>PM</div><div>Budget</div><div>Actual</div><div>Actions</div>
           </div>
           {projects.map((p) => (
-            <div key={p.entityId} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.3fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', alignItems: 'center' }}>
-              <div onClick={() => setSelectedId(p.entityId)} style={{ fontWeight: 600, color: '#141719', cursor: 'pointer' }}>{p.name}</div>
+            <div key={p.entityId} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.3fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center' }}>
+              <div onClick={() => setSelectedId(p.entityId)} style={{ fontWeight: 600, color: '#12201F', cursor: 'pointer' }}>{p.name}</div>
               <div><Chip label={p.stage} tone={p.tone} /></div>
               <div>{p.pm || '—'}</div><div>{p.budget}</div><div>{p.actual}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -257,7 +257,7 @@ export default function Projects({ currentUser }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editingCore ? 16 : 4 }}>
             <div>
               {!editingCore && <div style={{ fontSize: 15, fontWeight: 700 }}>{detail.name}</div>}
-              <div style={{ fontSize: 12, color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{detail.id}</div>
+              <div style={{ fontSize: 12, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{detail.id}</div>
             </div>
             {canWrite && !editingCore && (
               <div style={{ display: 'flex', gap: 10 }}>
@@ -267,15 +267,15 @@ export default function Projects({ currentUser }) {
             )}
             {editingCore && (
               <div style={{ display: 'flex', gap: 10 }}>
-                <button onClick={cancelEditCore} disabled={savingCore} style={{ ...linkBtnStyle, color: '#9AA0A6' }}>Cancel</button>
-                <button onClick={saveCore} disabled={savingCore} style={{ border: 'none', background: '#2563EB', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button onClick={cancelEditCore} disabled={savingCore} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
+                <button onClick={saveCore} disabled={savingCore} style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {savingCore && <Spinner size={11} color="#fff" />}Save
                 </button>
               </div>
             )}
           </div>
 
-          {coreError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{coreError}</div>}
+          {coreError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{coreError}</div>}
 
           {editingCore ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 8 }}>
@@ -309,19 +309,19 @@ export default function Projects({ currentUser }) {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18, marginTop: 14 }}>
               <div>
-                <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 5 }}>Customer</div>
+                <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Customer</div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{detail.customer || '—'}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 5 }}>Stage</div>
+                <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Stage</div>
                 <Chip label={detail.stage} tone={detail.tone} />
               </div>
               <div>
-                <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 5 }}>Project manager</div>
+                <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Project manager</div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{detail.pm || '—'}</div>
               </div>
               <div>
-                <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 5 }}>Budget / Actual</div>
+                <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Budget / Actual</div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>{detail.budget} / {detail.actual}</div>
               </div>
             </div>
@@ -335,14 +335,14 @@ export default function Projects({ currentUser }) {
             <div style={cardHeaderStyle}>Site survey</div>
             {canWriteSurveys && <button onClick={openSurveyForm} style={linkBtnStyle}>+ New site survey</button>}
           </div>
-          {linkedSurveys.length === 0 && <div style={{ fontSize: 13, color: '#9AA0A6' }}>No site surveys linked to this project yet.</div>}
+          {linkedSurveys.length === 0 && <div style={{ fontSize: 13, color: '#78908A' }}>No site surveys linked to this project yet.</div>}
           {linkedSurveys.map((s) => {
             const meta = SURVEY_STATUS_META[s.statusKey] || SURVEY_STATUS_META.Scheduled;
             return (
-              <div key={s.entityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
+              <div key={s.entityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
                 <div>
                   <div style={{ fontWeight: 600 }}>{s.plant}</div>
-                  <div style={{ fontSize: 11.5, color: '#9AA0A6' }}>{s.id} · surveyor {s.surveyor || '—'} · {s.date}</div>
+                  <div style={{ fontSize: 11.5, color: '#78908A' }}>{s.id} · surveyor {s.surveyor || '—'} · {s.date}</div>
                 </div>
                 <Chip label={meta.label} tone={meta.tone} />
               </div>
@@ -352,19 +352,19 @@ export default function Projects({ currentUser }) {
       )}
 
       {detail && (
-        <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: 20 }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', margin: '4px 0 16px' }}>
             {milestones.map((m, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
                 <div style={{ width: 20, height: 20, borderRadius: 999, background: m.bg, border: `2px solid ${m.color}` }} />
-                <div style={{ fontSize: 11, fontWeight: 600, marginTop: 6, color: '#334155', textAlign: 'center' }}>{m.label}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, marginTop: 6, color: '#52685F', textAlign: 'center' }}>{m.label}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #E4E8EB', marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #D7E4E1', marginBottom: 14 }}>
             {projectTabsList.map(([key, label]) => {
               const active = tab === key;
-              const color = active ? '#1E4FC4' : '#9AA0A6';
+              const color = active ? '#12484B' : '#78908A';
               return (
                 <div key={key} onClick={() => setTab(key)} style={{ padding: '9px 12px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color, borderBottom: `2px solid ${color}` }}>
                   {label}
@@ -374,20 +374,20 @@ export default function Projects({ currentUser }) {
           </div>
 
           {tab === 'tasks' && tasks.map((tk, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
               <div>
                 <div style={{ fontWeight: 600 }}>{tk.name}</div>
-                <div style={{ fontSize: 11.5, color: '#9AA0A6' }}>{tk.owner} · due {tk.due}</div>
+                <div style={{ fontSize: 11.5, color: '#78908A' }}>{tk.owner} · due {tk.due}</div>
               </div>
               <Chip label={tk.status} tone={tk.tone} />
             </div>
           ))}
 
           {tab === 'subs' && subs.map((sb, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F0F2F4', fontSize: 13 }}>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
               <div>
                 <div style={{ fontWeight: 600 }}>{sb.name}</div>
-                <div style={{ fontSize: 11.5, color: '#9AA0A6' }}>{sb.scope}</div>
+                <div style={{ fontSize: 11.5, color: '#78908A' }}>{sb.scope}</div>
               </div>
               <Chip label={sb.status} tone={sb.tone} />
             </div>
@@ -395,31 +395,31 @@ export default function Projects({ currentUser }) {
 
           {tab === 'budget' && budgetLines.map((bl, i) => (
             <div key={i} style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#334155', marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#52685F', marginBottom: 4 }}>
                 <span>{bl.label}</span>
                 <span>${bl.actual} / ${bl.budget}</span>
               </div>
-              <div style={{ height: 7, background: '#F0F2F4', borderRadius: 999 }}>
-                <div style={{ height: 7, width: '70%', background: '#2563EB', borderRadius: 999 }} />
+              <div style={{ height: 7, background: '#E9F1EF', borderRadius: 999 }}>
+                <div style={{ height: 7, width: '70%', background: '#1F6E72', borderRadius: 999 }} />
               </div>
             </div>
           ))}
 
           {tab === 'risk' && risks.map((rk, i) => (
-            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #F0F2F4' }}>
+            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #E9F1EF' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ fontWeight: 600, fontSize: 13 }}>{rk.risk}</div>
                 <Chip label={rk.severity} tone={rk.tone} />
               </div>
-              <div style={{ fontSize: 11.5, color: '#9AA0A6', marginTop: 3 }}>{rk.mitigation}</div>
+              <div style={{ fontSize: 11.5, color: '#78908A', marginTop: 3 }}>{rk.mitigation}</div>
             </div>
           ))}
         </div>
       )}
 
       {showAddForm && (
-        <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,25,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 460, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(20,23,25,0.2)' }}>
+        <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 460, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Add project</div>
 
             <div style={fieldLabelStyle}>Name *</div>
@@ -452,11 +452,11 @@ export default function Projects({ currentUser }) {
               </div>
             </div>
 
-            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
+            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {creating && <Spinner size={12} color="#fff" />}Add project
               </button>
             </div>
@@ -465,10 +465,10 @@ export default function Projects({ currentUser }) {
       )}
 
       {showSurveyForm && (
-        <div onClick={() => !creatingSurvey && setShowSurveyForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,25,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <form onClick={(e) => e.stopPropagation()} onSubmit={submitSurveyForm} style={{ width: 420, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(20,23,25,0.2)' }}>
+        <div onClick={() => !creatingSurvey && setShowSurveyForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <form onClick={(e) => e.stopPropagation()} onSubmit={submitSurveyForm} style={{ width: 420, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>New site survey</div>
-            <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 16 }}>Linked to {detail?.name}</div>
+            <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 16 }}>Linked to {detail?.name}</div>
 
             <div style={fieldLabelStyle}>Plant / site name *</div>
             <input value={surveyForm.plantName} onChange={(e) => setSurveyForm((f) => ({ ...f, plantName: e.target.value }))} required style={inputStyle} />
@@ -489,11 +489,11 @@ export default function Projects({ currentUser }) {
               {Object.entries(SURVEY_STATUS_META).map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
             </select>
 
-            {surveyError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{surveyError}</div>}
+            {surveyError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{surveyError}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button type="button" onClick={() => setShowSurveyForm(false)} disabled={creatingSurvey} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button type="submit" disabled={creatingSurvey} style={{ flex: 1, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creatingSurvey ? 'default' : 'pointer', opacity: creatingSurvey ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button type="button" onClick={() => setShowSurveyForm(false)} disabled={creatingSurvey} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+              <button type="submit" disabled={creatingSurvey} style={{ flex: 1, padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creatingSurvey ? 'default' : 'pointer', opacity: creatingSurvey ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {creatingSurvey && <Spinner size={12} color="#fff" />}Add survey
               </button>
             </div>

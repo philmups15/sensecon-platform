@@ -70,7 +70,7 @@ export default function AdminAuditLog() {
       <div style={sectionHeaderStyle}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 700 }}>Audit Log</div>
-          <div style={{ fontSize: 12.5, color: '#9AA0A6', marginTop: 2 }}>Every account and permission change, in order.</div>
+          <div style={{ fontSize: 12.5, color: '#78908A', marginTop: 2 }}>Every account and permission change, in order.</div>
         </div>
         <ExportMenu rows={exportRows} sheetName="Audit Log" fileBaseName="audit-log" title="Audit Log" />
       </div>
@@ -90,11 +90,11 @@ export default function AdminAuditLog() {
             ))}
           </select>
           <input type="date" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(1); }} style={inputStyle} />
-          <span style={{ fontSize: 12.5, color: '#9AA0A6' }}>to</span>
+          <span style={{ fontSize: 12.5, color: '#78908A' }}>to</span>
           <input type="date" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(1); }} style={inputStyle} />
         </div>
 
-        {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
+        {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
         {error && <div style={errorBannerStyle}>{error}</div>}
 
         {!loading && !error && (
@@ -112,14 +112,14 @@ export default function AdminAuditLog() {
                 <tbody>
                   {pageItems.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ padding: '26px 0', textAlign: 'center', color: '#9AA0A6', fontSize: 13 }}>No matching entries.</td>
+                      <td colSpan={4} style={{ padding: '26px 0', textAlign: 'center', color: '#78908A', fontSize: 13 }}>No matching entries.</td>
                     </tr>
                   )}
                   {pageItems.map((e) => (
                     <tr key={e.entityId}>
                       <td style={tdStyle}>{e.who}</td>
                       <td style={tdStyle}><Chip label={e.action} tone="slate" /></td>
-                      <td style={{ ...tdStyle, color: '#6A7178' }}>{e.time}</td>
+                      <td style={{ ...tdStyle, color: '#52685F' }}>{e.time}</td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
                         <button type="button" onClick={() => setViewingEntry(e)} style={secondaryBtnStyle}>View</button>
                       </td>
@@ -146,7 +146,7 @@ export default function AdminAuditLog() {
           <ModalField label="Actor">{viewingEntry.who}</ModalField>
           <ModalField label="Action"><Chip label={viewingEntry.action} tone="slate" /></ModalField>
           <ModalField label="Timestamp">{viewingEntry.time}</ModalField>
-          <ModalField label="Entry ID"><span style={{ color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace' }}>{viewingEntry.entityId}</span></ModalField>
+          <ModalField label="Entry ID"><span style={{ color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace' }}>{viewingEntry.entityId}</span></ModalField>
         </Modal>
       )}
     </div>

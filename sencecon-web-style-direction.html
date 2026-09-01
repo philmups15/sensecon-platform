@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sencecon — Web Style Direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+  /* ============ TOKENS ============ */
+  :root{
+    --font-display: 'Manrope', -apple-system, sans-serif;
+    --font-body: 'Source Sans 3', -apple-system, sans-serif;
+
+    --primary: #1F6E72;
+    --primary-tint: #E4F0EF;
+    --deep: #12484B;
+    --mid: #2E9E8F;
+    --accent: #3FD07A;
+    --accent-tint: #E1F9EA;
+    --spark: #C9F24D;
+
+    --ink: #12201F;
+    --slate: #52685F;
+    --slate-soft: #78908A;
+    --mist: #F4F8F7;
+    --mist-2: #E9F1EF;
+    --line: #D7E4E1;
+    --white: #FFFFFF;
+
+    --success: #1C8A4E;
+    --success-bg: #E3F8EC;
+    --info: var(--primary);
+    --info-bg: var(--primary-tint);
+    --warning: #8A5A16;
+    --warning-bg: #FBF0DC;
+    --error: #A6362E;
+    --error-bg: #FBE7E5;
+    --inactive: var(--slate);
+    --inactive-bg: #EAEFED;
+
+    --radius-s: 6px;
+    --radius: 10px;
+    --radius-l: 16px;
+    --shadow: 0 1px 2px rgba(18,32,31,.06), 0 6px 20px rgba(18,32,31,.06);
+    --shadow-l: 0 8px 30px rgba(18,32,31,.12);
+    --ease: 160ms ease;
+    --container: 1120px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+  body{
+    margin:0;
+    font-family: var(--font-body);
+    color: var(--ink);
+    background: var(--white);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  img,svg{ max-width:100%; display:block; }
+  h1,h2,h3,h4{ font-family: var(--font-display); margin:0; color: var(--ink); }
+  p{ margin:0; }
+  a{ color: var(--primary); }
+  ::selection{ background: var(--spark); color: var(--ink); }
+
+  .wrap{ max-width: var(--container); margin: 0 auto; padding: 0 32px; }
+  @media (max-width: 640px){ .wrap{ padding: 0 20px; } }
+
+  .eyebrow{
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--primary);
+    margin-bottom: 14px;
+    display:block;
+  }
+  .section{ padding: 88px 0; border-bottom: 1px solid var(--line); }
+  .section.on-mist{ background: var(--mist); }
+  .section-head{ max-width: 720px; margin-bottom: 48px; }
+  .section-head h2{ font-size: clamp(28px, 3.4vw, 38px); font-weight: 800; letter-spacing: -0.01em; }
+  .section-head .lead{ margin-top: 14px; font-size: 17px; color: var(--slate); max-width: 620px; }
+
+  /* ============ TOP JUMP NAV ============ */
+  .jump{
+    position: sticky; top:0; z-index: 50;
+    background: rgba(255,255,255,.92);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  .jump .wrap{ display:flex; gap: 4px; padding: 10px 32px; }
+  .jump a{
+    font-size: 13px; font-weight: 600; color: var(--slate);
+    text-decoration:none; padding: 7px 12px; border-radius: 999px;
+    transition: background var(--ease), color var(--ease);
+  }
+  .jump a:hover{ background: var(--mist-2); color: var(--ink); }
+
+  /* ============ BANNER ============ */
+  .banner{ padding: 64px 0 56px; border-bottom: 1px solid var(--line); }
+  .wordmark{
+    display:inline-flex; align-items:center; gap:10px;
+    font-family: var(--font-display); font-weight: 800; font-size: 20px; color: var(--deep);
+    margin-bottom: 28px;
+  }
+  .wordmark .dot{ width:11px; height:11px; border-radius:3px; background: var(--accent); }
+  .banner h1{ font-size: clamp(34px, 5vw, 54px); font-weight: 800; letter-spacing: -0.02em; max-width: 780px; }
+  .banner .sub{ margin-top: 18px; font-size: 18px; color: var(--slate); max-width: 620px; }
+
+  /* ============ COLOUR ============ */
+  .swatch-grid{ display:grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap:20px; }
+  .swatch{ border:1px solid var(--line); border-radius: var(--radius); overflow:hidden; background:var(--white); }
+  .swatch .fill{ height:88px; }
+  .swatch .meta{ padding: 14px 16px; }
+  .swatch .name{ font-weight:700; font-size:14.5px; }
+  .swatch .hex{ font-size:12.5px; color: var(--slate); font-variant-numeric: tabular-nums; margin-top:2px; }
+  .swatch .use{ font-size:12.5px; color: var(--slate-soft); margin-top:8px; }
+
+  .ratio-bar{ display:flex; height:44px; border-radius: var(--radius-s); overflow:hidden; margin-top:36px; border:1px solid var(--line); }
+  .ratio-bar div{ display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; color:var(--white); }
+  .ratio-neutral{ background: var(--slate-soft); width:60%; color:var(--white); }
+  .ratio-primary{ background: var(--primary); width:30%; }
+  .ratio-accent{ background: var(--accent); width:10%; color: var(--ink); }
+  .ratio-caption{ display:flex; justify-content:space-between; margin-top:10px; font-size:12.5px; color:var(--slate); }
+
+  /* ============ TYPE ============ */
+  .type-row{ padding: 26px 0; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; align-items:baseline; gap: 20px; justify-content:space-between; }
+  .type-row:first-child{ border-top:none; }
+  .type-label{ font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-soft); width:150px; flex-shrink:0; }
+  .type-sample{ flex:1; min-width:260px; }
+  .t-hero{ font-family:var(--font-display); font-weight:800; font-size:clamp(34px,4.4vw,52px); letter-spacing:-0.02em; line-height:1.05; }
+  .t-h1{ font-family:var(--font-display); font-weight:800; font-size:34px; letter-spacing:-0.01em; }
+  .t-h2{ font-family:var(--font-display); font-weight:700; font-size:26px; }
+  .t-lead{ font-family:var(--font-body); font-weight:400; font-size:19px; color:var(--slate); max-width:520px; }
+  .t-body{ font-family:var(--font-body); font-size:16px; max-width:520px; }
+  .t-eyebrow{ font-weight:700; font-size:12.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--primary); }
+
+  /* ============ BUTTONS & LINKS ============ */
+  .row{ display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
+  .btn{
+    font-family: var(--font-body); font-weight:700; font-size:14.5px;
+    padding: 13px 22px; border-radius: var(--radius-s); border:1px solid transparent;
+    cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:8px;
+    transition: transform var(--ease), background var(--ease), border-color var(--ease);
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn-primary{ background: var(--accent); color: var(--ink); }
+  .btn-primary:hover{ background:#33BC6C; }
+  .btn-dark{ background: var(--deep); color: var(--white); }
+  .btn-dark:hover{ background:#0D3A3C; }
+  .btn-ghost{ background: transparent; color: var(--primary); border-color: var(--line); }
+  .btn-ghost:hover{ border-color: var(--primary); }
+  .textlink{ color: var(--primary); font-weight:600; text-decoration: underline; text-underline-offset:3px; text-decoration-color: var(--line); }
+  .textlink:hover{ text-decoration-color: var(--primary); }
+  .btn-caption{ font-size:12.5px; color:var(--slate-soft); margin-top:10px; }
+
+  /* ============ CARDS ============ */
+  .grid-3{ display:grid; grid-template-columns: repeat(3, 1fr); gap:22px; }
+  @media (max-width: 860px){ .grid-3{ grid-template-columns:1fr; } }
+  .card{
+    background: var(--white); border:1px solid var(--line); border-radius: var(--radius-l);
+    padding: 28px; box-shadow: var(--shadow);
+  }
+  .card .num{ font-family:var(--font-display); font-weight:800; color: var(--primary); font-size:13px; letter-spacing:.06em; }
+  .card h3{ font-size:19px; margin-top:14px; font-weight:700; }
+  .card p{ margin-top:10px; font-size:14.5px; color: var(--slate); }
+  .card-dark{ background: var(--deep); border-color: var(--deep); color: var(--white); }
+  .card-dark .num{ color: var(--spark); }
+  .card-dark h3{ color: var(--white); }
+  .card-dark p{ color: #B9D3D0; }
+
+  .outcome{
+    margin-top: 36px; border-radius: var(--radius-l); background: var(--accent-tint);
+    border:1px solid #C4EED4; padding: 26px 32px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+  }
+  .outcome .big{ font-family:var(--font-display); font-weight:800; font-size:22px; }
+  .outcome .small{ font-size:14px; color: var(--slate); margin-top:4px; }
+
+  /* ============ STATS ============ */
+  .stat-grid{ display:grid; grid-template-columns: repeat(4,1fr); gap:1px; background: var(--line); border:1px solid var(--line); border-radius: var(--radius-l); overflow:hidden; }
+  @media (max-width: 780px){ .stat-grid{ grid-template-columns: repeat(2,1fr); } }
+  .stat{ background: var(--white); padding: 32px 24px; }
+  .stat .num{ font-family:var(--font-display); font-weight:800; font-size:clamp(28px,3.4vw,40px); color: var(--deep); letter-spacing:-0.01em; }
+  .stat .label{ margin-top:8px; font-size:13.5px; color: var(--slate); }
+
+  /* ============ HERO ============ */
+  .hero{
+    background: var(--deep); border-radius: var(--radius-l); overflow:hidden;
+    display:grid; grid-template-columns: 1.2fr 1fr; align-items:center; gap: 40px;
+    padding: 56px 56px;
+  }
+  @media (max-width: 860px){ .hero{ grid-template-columns:1fr; padding: 40px 28px; } }
+  .hero .eyebrow{ color: var(--spark); }
+  .hero h2{ color: var(--white); font-size: clamp(30px,4vw,44px); font-weight:800; letter-spacing:-0.02em; line-height:1.12; }
+  .hero h2 .hl{ color: var(--spark); }
+  .hero p{ color:#B9D3D0; font-size:16.5px; margin-top:18px; max-width:460px; }
+  .hero .row{ margin-top:28px; }
+  .motif{ justify-self:end; }
+
+  /* ============ NAV: TOP BAR ============ */
+  .demo-frame{ border:1px solid var(--line); border-radius: var(--radius-l); overflow:hidden; box-shadow: var(--shadow); }
+  .topbar{ background: var(--white); border-bottom:1px solid var(--line); padding: 16px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .topbar .brand{ font-family:var(--font-display); font-weight:800; font-size:16px; color: var(--deep); display:flex; align-items:center; gap:8px; }
+  .topbar .brand .dot{ width:9px; height:9px; border-radius:2px; background:var(--accent); }
+  .topbar nav{ display:flex; gap:6px; }
+  .topbar nav a{
+    font-size:14px; font-weight:600; color: var(--slate); text-decoration:none; padding:8px 14px; border-radius:999px;
+  }
+  .topbar nav a.active{ background: var(--accent-tint); color: var(--deep); }
+  .topbar .cta{ font-size:13px; }
+
+  /* ============ NAV: SIDEBAR SHELL ============ */
+  .shell{ display:grid; grid-template-columns: 240px 1fr; min-height: 320px; }
+  @media (max-width:700px){ .shell{ grid-template-columns:1fr; } .shell .sidebar{ display:none; } }
+  .sidebar{ background: var(--deep); padding: 26px 18px; }
+  .sidebar .brand{ font-family:var(--font-display); font-weight:800; color:var(--white); font-size:15px; padding: 0 10px 22px; display:flex; align-items:center; gap:8px; }
+  .sidebar .brand .dot{ width:9px; height:9px; border-radius:2px; background:var(--spark); }
+  .sidebar a{
+    display:flex; align-items:center; gap:10px; color:#B9D3D0; text-decoration:none;
+    font-size:14px; font-weight:600; padding:10px 12px; border-radius: var(--radius-s); margin-bottom:2px;
+  }
+  .sidebar a .ic{ width:16px; height:16px; border-radius:4px; background: currentColor; opacity:.5; }
+  .sidebar a.active{ background: rgba(63,208,122,.14); color: var(--white); }
+  .sidebar a.active .ic{ background: var(--accent); opacity:1; }
+  .shell-body{ background: var(--mist); padding: 30px 32px; }
+  .shell-body .ph-title{ font-family:var(--font-display); font-weight:800; font-size:20px; }
+  .shell-body .ph-sub{ color:var(--slate); font-size:14px; margin-top:6px; }
+  .shell-body .ph-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:22px; }
+  @media (max-width:560px){ .shell-body .ph-cards{ grid-template-columns:1fr; } }
+  .ph-card{ background:var(--white); border:1px solid var(--line); border-radius: var(--radius); padding:16px; }
+  .ph-card .k{ font-family:var(--font-display); font-weight:800; font-size:20px; color:var(--deep); }
+  .ph-card .v{ font-size:12.5px; color:var(--slate); margin-top:4px; }
+
+  /* ============ FORMS ============ */
+  .form-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:24px; }
+  @media (max-width:700px){ .form-grid{ grid-template-columns:1fr; } }
+  .field{ margin-bottom:22px; }
+  .field label{ display:block; font-size:13.5px; font-weight:700; margin-bottom:7px; color: var(--ink); }
+  .field .hint{ font-size:12.5px; color:var(--slate-soft); margin-top:6px; }
+  .field .err{ font-size:12.5px; color: var(--error); margin-top:6px; font-weight:600; }
+  input[type=text], input[type=email], select, textarea{
+    width:100%; font-family: var(--font-body); font-size:14.5px; color:var(--ink);
+    padding: 11px 14px; border-radius: var(--radius-s); border:1px solid var(--line); background: var(--white);
+    transition: border-color var(--ease), box-shadow var(--ease);
+  }
+  textarea{ min-height:96px; resize:vertical; }
+  input:focus, select:focus, textarea:focus{
+    outline:none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(31,110,114,.15);
+  }
+  .field.invalid input{ border-color: var(--error); box-shadow: 0 0 0 3px rgba(166,54,46,.12); }
+  .check-row{ display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .check-row input[type=checkbox]{ width:18px; height:18px; accent-color: var(--primary); }
+  .check-row label{ font-size:14.5px; }
+  .toggle{ position:relative; width:44px; height:24px; display:inline-block; }
+  .toggle input{ opacity:0; width:0; height:0; }
+  .toggle .track{ position:absolute; inset:0; background: var(--line); border-radius:999px; transition: background var(--ease); }
+  .toggle .track:before{ content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:var(--white); border-radius:50%; transition: transform var(--ease); box-shadow: var(--shadow); }
+  .toggle input:checked + .track{ background: var(--accent); }
+  .toggle input:checked + .track:before{ transform: translateX(20px); }
+  .toggle-row{ display:flex; align-items:center; gap:12px; }
+  .toggle-row span{ font-size:14.5px; font-weight:600; }
+
+  /* ============ TABLE ============ */
+  table{ width:100%; border-collapse: collapse; background: var(--white); border:1px solid var(--line); border-radius: var(--radius); overflow:hidden; }
+  thead th{
+    text-align:left; font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color: var(--slate-soft); background: var(--mist); padding: 13px 18px; border-bottom:1px solid var(--line);
+  }
+  tbody td{ padding: 14px 18px; border-bottom:1px solid var(--line); font-size:14.5px; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr{ transition: background var(--ease); }
+  tbody tr:hover{ background: var(--mist); }
+  td.num, th.num{ text-align:right; font-variant-numeric: tabular-nums; }
+
+  /* ============ BADGES / TAGS / ALERTS ============ */
+  .badge{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700;
+    padding: 5px 11px; border-radius:999px; letter-spacing:.02em;
+  }
+  .badge:before{ content:''; width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .badge-success{ background: var(--success-bg); color: var(--success); }
+  .badge-info{ background: var(--info-bg); color: var(--info); }
+  .badge-warning{ background: var(--warning-bg); color: var(--warning); }
+  .badge-inactive{ background: var(--inactive-bg); color: var(--inactive); }
+
+  .alert{ display:flex; gap:14px; padding:16px 18px; border-radius: var(--radius); border:1px solid; margin-bottom:14px; }
+  .alert .a-title{ font-weight:700; font-size:14.5px; }
+  .alert .a-body{ font-size:13.5px; margin-top:3px; }
+  .alert-success{ background: var(--success-bg); border-color:#BFE9CE; color:#155C36; }
+  .alert-info{ background: var(--info-bg); border-color:#C9E0DF; color: var(--deep); }
+  .alert-warning{ background: var(--warning-bg); border-color:#EFDBAF; color:#6E4610; }
+  .alert-error{ background: var(--error-bg); border-color:#F0C6C2; color:#7C2620; }
+
+  /* ============ TABS ============ */
+  .tabs{ display:flex; gap:28px; border-bottom:1px solid var(--line); }
+  .tab{ padding:12px 2px; font-size:14.5px; font-weight:700; color:var(--slate); border-bottom:2px solid transparent; cursor:pointer; }
+  .tab.active{ color: var(--ink); border-color: var(--accent); }
+  .tab-panel{ padding:26px 0 0; color:var(--slate); font-size:14.5px; max-width:560px; }
+
+  /* ============ SMALL COMPONENTS ============ */
+  .small-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap: 40px 32px; }
+  @media (max-width:780px){ .small-grid{ grid-template-columns:1fr; } }
+  .small-block .label{ font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-soft); margin-bottom:14px; }
+
+  .breadcrumbs{ display:flex; align-items:center; gap:8px; font-size:13.5px; color: var(--slate); }
+  .breadcrumbs a{ color:var(--slate); text-decoration:none; }
+  .breadcrumbs a:hover{ color: var(--primary); }
+  .breadcrumbs .sep{ color: var(--line); }
+  .breadcrumbs .current{ color: var(--ink); font-weight:600; }
+
+  .avatar-stack{ display:flex; }
+  .avatar{
+    width:38px; height:38px; border-radius:50%; border:2.5px solid var(--white);
+    display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; color:var(--white);
+    margin-left:-10px; font-family: var(--font-display);
+  }
+  .avatar:first-child{ margin-left:0; }
+  .avatar.a1{ background: var(--primary); }
+  .avatar.a2{ background: var(--mid); }
+  .avatar.a3{ background: var(--deep); }
+  .avatar.a4{ background: var(--slate-soft); font-size:11.5px; }
+
+  .progress{ height:9px; border-radius:999px; background: var(--mist-2); overflow:hidden; }
+  .progress .fill{ height:100%; background: var(--accent); border-radius:999px; width:72%; }
+  .progress-caption{ display:flex; justify-content:space-between; font-size:12.5px; color:var(--slate); margin-top:8px; }
+
+  .tooltip-demo{ display:inline-block; position:relative; }
+  .tooltip-demo .trigger{
+    font-size:13.5px; font-weight:600; padding:9px 16px; border-radius: var(--radius-s);
+    border:1px solid var(--line); background:var(--white); cursor:default;
+  }
+  .tooltip-demo .bubble{
+    position:absolute; bottom: calc(100% + 10px); left:50%; transform: translateX(-50%);
+    background: var(--ink); color:var(--white); font-size:12.5px; padding:8px 12px; border-radius:6px;
+    white-space:nowrap; opacity:0; pointer-events:none; transition: opacity var(--ease);
+  }
+  .tooltip-demo .bubble:after{ content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:5px solid transparent; border-top-color: var(--ink); }
+  .tooltip-demo:hover .bubble{ opacity:1; }
+
+  .dropdown{ position:relative; display:inline-block; }
+  .dropdown summary{
+    list-style:none; cursor:pointer; font-size:13.5px; font-weight:600; padding:9px 16px;
+    border-radius: var(--radius-s); border:1px solid var(--line); background:var(--white); display:flex; align-items:center; gap:8px;
+  }
+  .dropdown summary::-webkit-details-marker{ display:none; }
+  .dropdown summary:after{ content:'▾'; font-size:11px; color:var(--slate-soft); }
+  .dropdown .menu{
+    position:absolute; top: calc(100% + 6px); left:0; min-width:200px; background:var(--white);
+    border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-l); padding:6px; z-index:10;
+  }
+  .dropdown .menu a{ display:block; padding:9px 12px; border-radius:6px; font-size:13.5px; color:var(--ink); text-decoration:none; }
+  .dropdown .menu a:hover{ background: var(--mist); }
+  .dropdown .menu .div{ height:1px; background:var(--line); margin:6px 2px; }
+
+  /* ============ IMAGERY DO/DONT ============ */
+  .dd-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:22px; }
+  @media (max-width:780px){ .dd-grid{ grid-template-columns:1fr; } }
+  .dd-card{ border-radius: var(--radius-l); overflow:hidden; border:1px solid var(--line); }
+  .dd-visual{ height:150px; display:flex; align-items:center; justify-content:center; }
+  .dd-do .dd-visual{ background: var(--mist-2); }
+  .dd-dont .dd-visual{ background: #F3EDEA; }
+  .dd-tag{ padding:16px 18px; }
+  .dd-tag .flag{ font-family:var(--font-display); font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+  .dd-do .flag{ color: var(--success); }
+  .dd-dont .flag{ color: var(--error); }
+  .dd-tag p{ font-size:13.5px; color:var(--slate); margin-top:6px; }
+
+  footer{ padding: 40px 0; }
+  footer p{ font-size:13px; color: var(--slate-soft); }
+
+</style>
+</head>
+<body>
+
+<nav class="jump">
+  <div class="wrap">
+    <a href="#colour">01 Colour</a>
+    <a href="#type">02 Type</a>
+    <a href="#buttons">03 Buttons</a>
+    <a href="#cards">04 Cards</a>
+    <a href="#stats">05 Stats</a>
+    <a href="#hero">06 Hero</a>
+    <a href="#nav">07 Nav</a>
+    <a href="#forms">08 Forms</a>
+    <a href="#tables">09 Tables</a>
+    <a href="#badges">10 Badges</a>
+    <a href="#tabs">11 Tabs</a>
+    <a href="#small">12 Small</a>
+    <a href="#imagery">13 Imagery</a>
+  </div>
+</nav>
+
+<header class="banner">
+  <div class="wrap">
+    <div class="wordmark"><span class="dot"></span>Sencecon</div>
+    <h1>Web Style Direction</h1>
+    <p class="sub">A living reference for how Sencecon should look and feel across the marketing site and the operating platform — colour, type, and every component, in one scrollable page. Copy the tokens and patterns directly into product rather than restyling from scratch.</p>
+  </div>
+</header>
+
+<!-- 01 COLOUR -->
+<section class="section" id="colour">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Foundations</span>
+      <h2>01 — Colour</h2>
+      <p class="lead">A single teal core with one bright accent reserved for action. Neutrals carry most of the interface; colour is used to direct attention, not decorate it.</p>
+    </div>
+
+    <div class="swatch-grid">
+      <div class="swatch"><div class="fill" style="background:var(--primary)"></div><div class="meta"><div class="name">Primary</div><div class="hex">#1F6E72</div><div class="use">Links, icons, primary brand moments</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--deep)"></div><div class="meta"><div class="name">Deep</div><div class="hex">#12484B</div><div class="use">Dark surfaces, sidebar, hero panels</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--mid)"></div><div class="meta"><div class="name">Mid</div><div class="hex">#2E9E8F</div><div class="use">Secondary accents, charts, info states</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--accent)"></div><div class="meta"><div class="name">Accent</div><div class="hex">#3FD07A</div><div class="use">Primary buttons, active states, CTAs</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--spark)"></div><div class="meta"><div class="name">Spark</div><div class="hex">#C9F24D</div><div class="use">Rare highlights on dark surfaces only</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--ink)"></div><div class="meta"><div class="name">Ink</div><div class="hex">#12201F</div><div class="use">Primary text</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--slate)"></div><div class="meta"><div class="name">Slate</div><div class="hex">#52685F</div><div class="use">Secondary text, captions</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--mist)"></div><div class="meta"><div class="name">Mist</div><div class="hex">#F4F8F7</div><div class="use">Section backgrounds</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--mist-2)"></div><div class="meta"><div class="name">Mist 2</div><div class="hex">#E9F1EF</div><div class="use">Alt card backgrounds</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--line);"></div><div class="meta"><div class="name">Line</div><div class="hex">#D7E4E1</div><div class="use">Borders, dividers</div></div></div>
+      <div class="swatch"><div class="fill" style="background:var(--white); border-bottom:1px solid var(--line)"></div><div class="meta"><div class="name">White</div><div class="hex">#FFFFFF</div><div class="use">Base surface</div></div></div>
+    </div>
+
+    <div class="ratio-bar">
+      <div class="ratio-neutral">Neutral · 60%</div>
+      <div class="ratio-primary">Primary · 30%</div>
+      <div class="ratio-accent">Accent · 10%</div>
+    </div>
+    <div class="ratio-caption"><span>Backgrounds, text, borders</span><span>Brand surfaces, links</span><span>Actions only</span></div>
+  </div>
+</section>
+
+<!-- 02 TYPE -->
+<section class="section on-mist" id="type">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Foundations</span>
+      <h2>02 — Typography</h2>
+      <p class="lead">Manrope carries headlines and numbers with a confident, geometric edge. Source Sans 3 handles everything read at length — dense tables, forms, body copy.</p>
+    </div>
+
+    <div class="type-row">
+      <div class="type-label">Hero / Manrope 800</div>
+      <div class="type-sample t-hero">From opportunity<br>to online.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">H1 / Manrope 800</div>
+      <div class="type-sample t-h1">Plant performance overview</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">H2 / Manrope 700</div>
+      <div class="type-sample t-h2">Active work orders this week</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Lead / Source Sans 400</div>
+      <div class="type-sample t-lead">Track every project from first site survey through commissioning, with one system your whole delivery team can see.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Body / Source Sans 400</div>
+      <div class="type-sample t-body">The SunCrest 4.2 MW installation moved to the Design stage on Tuesday. Two BOM items are pending supplier confirmation before procurement can begin.</div>
+    </div>
+    <div class="type-row">
+      <div class="type-label">Eyebrow / SS 700</div>
+      <div class="type-sample t-eyebrow">Operations · Plant Health</div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 BUTTONS -->
+<section class="section" id="buttons">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Foundations</span>
+      <h2>03 — Buttons &amp; links</h2>
+      <p class="lead">One clear primary action per screen. Everything else recedes to ghost or text-link treatment.</p>
+    </div>
+    <div class="row">
+      <a class="btn btn-primary" href="#">Request a demo</a>
+      <a class="btn btn-dark" href="#">Sign in</a>
+      <a class="btn btn-ghost" href="#">View documentation</a>
+      <a class="textlink" href="#">See all integrations →</a>
+    </div>
+    <p class="btn-caption">Primary uses dark ink text on the accent fill to keep contrast accessible — white text on the accent green fails contrast, so it's never used.</p>
+  </div>
+</section>
+
+<!-- 04 CARDS -->
+<section class="section on-mist" id="cards">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Components</span>
+      <h2>04 — Section pattern &amp; cards</h2>
+      <p class="lead">Every marketing section opens the same way: eyebrow, numbered header, short lead — then a three-card grid, always with one dark card for contrast.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="num">01</div>
+        <h3>Opportunity pipeline</h3>
+        <p>Track every lead from first contact through stage changes, notes, and attachments, in one shared pipeline.</p>
+      </div>
+      <div class="card">
+        <div class="num">02</div>
+        <h3>Survey to design</h3>
+        <p>Site surveys hand off directly into engineering design and BOM — no re-entering data between teams.</p>
+      </div>
+      <div class="card card-dark">
+        <div class="num">03</div>
+        <h3>Admin &amp; access control</h3>
+        <p>Role-based permissions per module, with a full audit trail of every change made in the system.</p>
+      </div>
+    </div>
+
+    <div class="outcome">
+      <div>
+        <div class="big">Handover time down 38%</div>
+        <div class="small">Teams using Sencecon's opportunity-to-project conversion cut manual re-entry between sales and delivery.</div>
+      </div>
+      <a class="btn btn-primary" href="#">See how it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- 05 STATS -->
+<section class="section" id="stats">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Components</span>
+      <h2>05 — Stat callouts</h2>
+      <p class="lead">Large tabular numbers, minimal labelling. Used on the homepage and inside dashboard summary rows alike.</p>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="num">128 MW</div><div class="label">Capacity in active pipeline</div></div>
+      <div class="stat"><div class="num">47</div><div class="label">Plants under management</div></div>
+      <div class="stat"><div class="num">342</div><div class="label">Work orders this quarter</div></div>
+      <div class="stat"><div class="num">96%</div><div class="label">On-time commissioning rate</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 HERO -->
+<section class="section on-mist" id="hero">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Components</span>
+      <h2>06 — Hero block</h2>
+      <p class="lead">The dark panel is reserved for the single highest-stakes moment on a page — usually the homepage hero.</p>
+    </div>
+
+    <div class="hero">
+      <div>
+        <span class="eyebrow">Sencecon Platform</span>
+        <h2>Run your solar pipeline from opportunity to <span class="hl">online</span>.</h2>
+        <p>One system for sales, survey, design, procurement, delivery, and plant operations — built for teams who used to run all of it in spreadsheets.</p>
+        <div class="row"><a class="btn btn-primary" href="#">Request a demo</a></div>
+      </div>
+      <div class="motif">
+        <svg width="220" height="180" viewBox="0 0 220 180" fill="none">
+          <rect x="20" y="90" width="80" height="50" rx="4" fill="#1A5B5E"/>
+          <rect x="28" y="98" width="26" height="16" rx="2" fill="#2E9E8F"/>
+          <rect x="58" y="98" width="26" height="16" rx="2" fill="#2E9E8F"/>
+          <rect x="28" y="118" width="26" height="16" rx="2" fill="#2E9E8F"/>
+          <rect x="58" y="118" width="26" height="16" rx="2" fill="#2E9E8F"/>
+          <rect x="55" y="140" width="6" height="26" fill="#1A5B5E"/>
+          <circle cx="150" cy="60" r="26" fill="#3FD07A"/>
+          <path d="M150 20V32M150 88V100M110 60H122M178 60H190M124 34L132 42M168 78L176 86M176 34L168 42M132 78L124 86" stroke="#C9F24D" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 NAV -->
+<section class="section" id="nav">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">App components</span>
+      <h2>07 — Navigation</h2>
+      <p class="lead">A light top bar for the marketing site and shallow app views; a dark sidebar shell for the full operating platform.</p>
+    </div>
+
+    <div class="small-block" style="margin-bottom:32px;">
+      <div class="label">Top navigation</div>
+      <div class="demo-frame">
+        <div class="topbar">
+          <div class="brand"><span class="dot"></span>Sencecon</div>
+          <nav>
+            <a class="active" href="#">Dashboard</a>
+            <a href="#">Opportunities</a>
+            <a href="#">Projects</a>
+            <a href="#">Plants</a>
+            <a href="#">Reports</a>
+          </nav>
+          <a class="btn btn-dark cta" href="#">Sign in</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="small-block">
+      <div class="label">Sidebar app shell</div>
+      <div class="demo-frame">
+        <div class="shell">
+          <div class="sidebar">
+            <div class="brand"><span class="dot"></span>Sencecon</div>
+            <a href="#"><span class="ic"></span>Dashboard</a>
+            <a class="active" href="#"><span class="ic"></span>Opportunities</a>
+            <a href="#"><span class="ic"></span>Surveys</a>
+            <a href="#"><span class="ic"></span>Design &amp; BOM</a>
+            <a href="#"><span class="ic"></span>Projects</a>
+            <a href="#"><span class="ic"></span>Plants</a>
+            <a href="#"><span class="ic"></span>Work Orders</a>
+            <a href="#"><span class="ic"></span>Reports</a>
+            <a href="#"><span class="ic"></span>Admin</a>
+          </div>
+          <div class="shell-body">
+            <div class="ph-title">Opportunities</div>
+            <div class="ph-sub">18 open · 128 MW total value</div>
+            <div class="ph-cards">
+              <div class="ph-card"><div class="k">6</div><div class="v">In discovery</div></div>
+              <div class="ph-card"><div class="k">9</div><div class="v">In proposal</div></div>
+              <div class="ph-card"><div class="k">3</div><div class="v">Ready to convert</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 FORMS -->
+<section class="section on-mist" id="forms">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">App components</span>
+      <h2>08 — Forms &amp; inputs</h2>
+      <p class="lead">Generous padding, a single-colour focus ring, and errors that state the fix, not just the problem.</p>
+    </div>
+
+    <div class="form-grid">
+      <div>
+        <div class="field">
+          <label>Opportunity name</label>
+          <input type="text" value="SunCrest Solar Farm — Phase 2">
+        </div>
+        <div class="field">
+          <label>Pipeline stage</label>
+          <select>
+            <option>Discovery</option>
+            <option selected>Proposal</option>
+            <option>Negotiation</option>
+            <option>Won</option>
+          </select>
+        </div>
+        <div class="field invalid">
+          <label>Estimated capacity (MW)</label>
+          <input type="text" value="four point two">
+          <div class="err">Enter a number, e.g. 4.2</div>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label>Notes</label>
+          <textarea>Customer requested revised BOM pricing before moving to negotiation.</textarea>
+        </div>
+        <div class="check-row">
+          <input type="checkbox" id="c1" checked>
+          <label for="c1">Notify project manager on stage change</label>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" checked><span class="track"></span></label>
+          <span>Include in weekly pipeline report</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 TABLES -->
+<section class="section" id="tables">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">App components</span>
+      <h2>09 — Tables</h2>
+      <p class="lead">Uppercase headers, hover rows, and right-aligned numerals so figures stay easy to scan down a column.</p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Work order</th>
+          <th>Plant</th>
+          <th>Type</th>
+          <th class="num">Capacity (MW)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>WO-1042</td><td>SunCrest Solar Farm</td><td>Commissioning</td><td class="num">4.20</td><td><span class="badge badge-success">Completed</span></td></tr>
+        <tr><td>WO-1043</td><td>Redfield Array</td><td>Preventive maintenance</td><td class="num">2.80</td><td><span class="badge badge-info">In progress</span></td></tr>
+        <tr><td>WO-1044</td><td>Harmon Ridge</td><td>Inverter fault</td><td class="num">1.15</td><td><span class="badge badge-warning">Blocked</span></td></tr>
+        <tr><td>WO-1045</td><td>Blackwell Site</td><td>Site inspection</td><td class="num">3.60</td><td><span class="badge badge-inactive">Scheduled</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 10 BADGES / ALERTS -->
+<section class="section on-mist" id="badges">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">App components</span>
+      <h2>10 — Badges, tags &amp; alerts</h2>
+      <p class="lead">One status colour system used everywhere. Red is reserved for errors — never used for a routine "blocked" or "pending" state.</p>
+    </div>
+
+    <div class="row" style="margin-bottom:40px;">
+      <span class="badge badge-success">Completed</span>
+      <span class="badge badge-info">In progress</span>
+      <span class="badge badge-warning">Needs attention</span>
+      <span class="badge badge-inactive">Inactive</span>
+    </div>
+
+    <div class="alert alert-success"><div><div class="a-title">Project converted</div><div class="a-body">SunCrest Solar Farm was successfully created from this opportunity.</div></div></div>
+    <div class="alert alert-info"><div><div class="a-title">Survey linked</div><div class="a-body">This survey is now linked to Redfield Array — Phase 1.</div></div></div>
+    <div class="alert alert-warning"><div><div class="a-title">Supplier confirmation pending</div><div class="a-body">2 BOM items are awaiting supplier pricing before procurement can start.</div></div></div>
+    <div class="alert alert-error"><div><div class="a-title">Upload failed</div><div class="a-body">The attachment exceeds the 25MB limit. Reduce the file size and try again.</div></div></div>
+  </div>
+</section>
+
+<!-- 11 TABS -->
+<section class="section" id="tabs">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">App components</span>
+      <h2>11 — Tabs</h2>
+      <p class="lead">Used inside record detail views — an opportunity, a plant, a work order — to split a long record into scannable panes.</p>
+    </div>
+    <div class="tabs">
+      <div class="tab active">Overview</div>
+      <div class="tab">Notes</div>
+      <div class="tab">Attachments</div>
+      <div class="tab">Activity</div>
+    </div>
+    <div class="tab-panel">SunCrest Solar Farm — Phase 2 · 4.2 MW · Proposal stage since Aug 22. Owned by J. Alvarez.</div>
+  </div>
+</section>
+
+<!-- 12 SMALL COMPONENTS -->
+<section class="section on-mist" id="small">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">App components</span>
+      <h2>12 — Small components</h2>
+      <p class="lead">The connective tissue — used in headers, sidebars, and record detail views throughout the platform.</p>
+    </div>
+
+    <div class="small-grid">
+      <div class="small-block">
+        <div class="label">Breadcrumbs</div>
+        <div class="breadcrumbs">
+          <a href="#">Projects</a><span class="sep">/</span><a href="#">SunCrest Solar Farm</a><span class="sep">/</span><span class="current">Work orders</span>
+        </div>
+      </div>
+
+      <div class="small-block">
+        <div class="label">Avatar stack</div>
+        <div class="avatar-stack">
+          <div class="avatar a1">JA</div>
+          <div class="avatar a2">MK</div>
+          <div class="avatar a3">RT</div>
+          <div class="avatar a4">+3</div>
+        </div>
+      </div>
+
+      <div class="small-block">
+        <div class="label">Progress bar</div>
+        <div class="progress"><div class="fill"></div></div>
+        <div class="progress-caption"><span>Design phase</span><span>72%</span></div>
+      </div>
+
+      <div class="small-block">
+        <div class="label">Tooltip</div>
+        <div class="tooltip-demo">
+          <div class="trigger">Plant health score ⓘ</div>
+          <div class="bubble">Weighted from uptime, performance ratio, and open faults</div>
+        </div>
+      </div>
+
+      <div class="small-block">
+        <div class="label">Dropdown menu</div>
+        <details class="dropdown">
+          <summary>Actions</summary>
+          <div class="menu">
+            <a href="#">Convert to project</a>
+            <a href="#">Add note</a>
+            <a href="#">Upload attachment</a>
+            <div class="div"></div>
+            <a href="#">Archive opportunity</a>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13 IMAGERY -->
+<section class="section" id="imagery">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Guidance</span>
+      <h2>13 — Imagery &amp; motifs</h2>
+      <p class="lead">Sencecon's visual language stays flat, geometric, and specific to solar infrastructure — never generic tech stock.</p>
+    </div>
+
+    <div class="dd-grid">
+      <div class="dd-card dd-do">
+        <div class="dd-visual">
+          <svg width="120" height="90" viewBox="0 0 120 90" fill="none">
+            <rect x="10" y="40" width="45" height="30" rx="3" fill="#2E9E8F"/>
+            <rect x="15" y="45" width="15" height="9" fill="#E9F1EF"/>
+            <rect x="34" y="45" width="15" height="9" fill="#E9F1EF"/>
+            <rect x="15" y="57" width="15" height="9" fill="#E9F1EF"/>
+            <rect x="34" y="57" width="15" height="9" fill="#E9F1EF"/>
+            <circle cx="90" cy="30" r="16" fill="#3FD07A"/>
+          </svg>
+        </div>
+        <div class="dd-tag"><div class="flag">Do</div><p>Flat geometric icons, real site/plant photography, tabular data shown plainly.</p></div>
+      </div>
+      <div class="dd-card dd-dont">
+        <div class="dd-visual">
+          <svg width="120" height="90" viewBox="0 0 120 90" fill="none">
+            <defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#8DE0C0"/><stop offset="100%" stop-color="#2E5B8C"/></radialGradient></defs>
+            <circle cx="60" cy="45" r="34" fill="url(#g)" opacity="0.5"/>
+            <circle cx="60" cy="45" r="20" fill="none" stroke="#B08CFF" stroke-width="2" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="dd-tag"><div class="flag">Don't</div><p>Glossy 3D globes, neon gradient "AI" glows, generic hardhat-handshake stock photos.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Sencecon — Web Style Direction. Manrope + Source Sans 3, via Google Fonts.</p>
+  </div>
+</footer>
+
+</body>
+</html>

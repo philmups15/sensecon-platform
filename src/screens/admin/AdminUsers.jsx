@@ -228,7 +228,7 @@ export default function AdminUsers({ currentUser }) {
       <div style={sectionHeaderStyle}>
         <div>
           <div style={{ fontSize: 17, fontWeight: 700 }}>Users</div>
-          <div style={{ fontSize: 12.5, color: '#9AA0A6', marginTop: 2 }}>
+          <div style={{ fontSize: 12.5, color: '#78908A', marginTop: 2 }}>
             {users.length} user{users.length === 1 ? '' : 's'}{roleCount ? ` across ${roleCount} role${roleCount === 1 ? '' : 's'}` : ''}
           </div>
         </div>
@@ -239,13 +239,13 @@ export default function AdminUsers({ currentUser }) {
       </div>
 
       {createdCredential && (
-        <div style={{ marginBottom: 14, padding: '9px 11px', background: '#EAF6EE', border: '1px solid #BFE5CB', borderRadius: 8, fontSize: 12 }}>
+        <div style={{ marginBottom: 14, padding: '9px 11px', background: '#E3F8EC', border: '1px solid #BFE9CE', borderRadius: 8, fontSize: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
             <div>
               <b>{createdCredential.email}</b> created. Temporary password: <span style={{ fontFamily: 'SF Mono, Consolas, monospace' }}>{createdCredential.password}</span>
-              <div style={{ color: '#3A7A4E', marginTop: 2 }}>Save this now — it won't be shown again.</div>
+              <div style={{ color: '#1C8A4E', marginTop: 2 }}>Save this now — it won't be shown again.</div>
             </div>
-            <button type="button" onClick={() => setCreatedCredential(null)} style={{ ...linkBtnStyle, color: '#3A7A4E' }}>Dismiss</button>
+            <button type="button" onClick={() => setCreatedCredential(null)} style={{ ...linkBtnStyle, color: '#1C8A4E' }}>Dismiss</button>
           </div>
         </div>
       )}
@@ -272,7 +272,7 @@ export default function AdminUsers({ currentUser }) {
           </select>
         </div>
 
-        {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#9AA0A6', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
+        {loading && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A', padding: '8px 0' }}><Spinner size={14} />Loading…</div>}
         {error && <div style={errorBannerStyle}>{error}</div>}
         {roleError && <div style={{ ...errorBannerStyle, marginBottom: 10 }}>{roleError}</div>}
 
@@ -291,7 +291,7 @@ export default function AdminUsers({ currentUser }) {
                 <tbody>
                   {pageItems.length === 0 && (
                     <tr>
-                      <td colSpan={4} style={{ padding: '26px 0', textAlign: 'center', color: '#9AA0A6', fontSize: 13 }}>No users match your filters.</td>
+                      <td colSpan={4} style={{ padding: '26px 0', textAlign: 'center', color: '#78908A', fontSize: 13 }}>No users match your filters.</td>
                     </tr>
                   )}
                   {pageItems.map((u) => {
@@ -300,7 +300,7 @@ export default function AdminUsers({ currentUser }) {
                       <tr key={u.entityId}>
                         <td style={tdStyle}>
                           <div style={{ fontWeight: 600 }}>{u.name}</div>
-                          <div style={{ fontSize: 11.5, color: '#9AA0A6' }}>{u.email}</div>
+                          <div style={{ fontSize: 11.5, color: '#78908A' }}>{u.email}</div>
                         </td>
                         <td style={tdStyle}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -381,7 +381,7 @@ export default function AdminUsers({ currentUser }) {
                   <option key={r} value={r}>{USER_ROLE_META[r].label}</option>
                 ))}
               </select>
-              <div style={{ fontSize: 11, color: '#9AA0A6', marginTop: 4 }}>Role determines which pages and actions this user can access.</div>
+              <div style={{ fontSize: 11, color: '#78908A', marginTop: 4 }}>Role determines which pages and actions this user can access.</div>
             </ModalField>
 
             {!moreDetailsOpen ? (
@@ -445,7 +445,7 @@ export default function AdminUsers({ currentUser }) {
               <ModalField label="Confirm password">
                 <input type="password" value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} placeholder="Confirm new password" style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }} />
               </ModalField>
-              <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 10 }}>Takes effect on their next sign-in — any session they're already signed into stays active until its token expires.</div>
+              <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 10 }}>Takes effect on their next sign-in — any session they're already signed into stays active until its token expires.</div>
             </>
           ) : (
             <p style={{ fontSize: 13, margin: '0 0 10px' }}>
@@ -467,7 +467,7 @@ export default function AdminUsers({ currentUser }) {
                 type="button"
                 onClick={handleStatusConfirm}
                 disabled={statusSubmitting}
-                style={{ ...primaryBtnStyle, background: '#B42318', opacity: statusSubmitting ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}
+                style={{ ...primaryBtnStyle, background: '#A6362E', opacity: statusSubmitting ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}
               >
                 {statusSubmitting && <Spinner size={11} color="#fff" />}{statusModal.status === 'Active' ? 'Disable user' : 'Enable user'}
               </button>

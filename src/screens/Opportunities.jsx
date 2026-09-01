@@ -46,33 +46,33 @@ const linkBtnStyle = {
   padding: '3px 6px',
   border: 'none',
   background: 'transparent',
-  color: '#2563EB',
+  color: '#1F6E72',
   fontSize: 11,
   fontWeight: 700,
   cursor: 'pointer',
 };
-const dangerBtnStyle = { ...linkBtnStyle, color: '#B42318' };
+const dangerBtnStyle = { ...linkBtnStyle, color: '#A6362E' };
 const selectStyle = {
   padding: '5px 8px',
-  border: '1px solid #D2D8DC',
+  border: '1px solid #D7E4E1',
   borderRadius: 8,
   fontSize: 12.5,
   fontWeight: 600,
-  color: '#334155',
+  color: '#52685F',
   background: '#FFFFFF',
   cursor: 'pointer',
 };
-const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#334155', marginBottom: 5 };
-const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D2D8DC', borderRadius: 8, fontSize: 13, marginBottom: 12 };
-const cardStyle = { background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, padding: '20px 22px', marginBottom: 16 };
-const cardHeaderStyle = { fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6' };
-const primaryBtnStyle = { padding: '9px 16px', background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
+const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#52685F', marginBottom: 5 };
+const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 12 };
+const cardStyle = { background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: '20px 22px', marginBottom: 16 };
+const cardHeaderStyle = { fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A' };
+const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
 const chipBtnStyle = (active) => ({
   padding: '7px 13px',
   borderRadius: 999,
-  border: `1px solid ${active ? '#2563EB' : '#D2D8DC'}`,
-  background: active ? '#2563EB' : '#FFFFFF',
-  color: active ? '#fff' : '#334155',
+  border: `1px solid ${active ? '#1F6E72' : '#D7E4E1'}`,
+  background: active ? '#1F6E72' : '#FFFFFF',
+  color: active ? '#fff' : '#52685F',
   fontSize: 12.5,
   fontWeight: 600,
   cursor: 'pointer',
@@ -389,8 +389,8 @@ export default function Opportunities({ currentUser, onNavigate }) {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#6A7178' }}><Spinner size={18} />Loading opportunities…</div>;
-  if (error) return <div style={{ padding: 20, color: '#B42318' }}>{error}</div>;
+  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading opportunities…</div>;
+  if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
 
   const selected = opportunities.find((o) => o.entityId === selectedId);
   const showDetail = Boolean(selected);
@@ -422,13 +422,13 @@ export default function Opportunities({ currentUser, onNavigate }) {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <button
               onClick={() => setView('list')}
-              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #D2D8DC', background: view === 'list' ? '#EAF0FE' : '#FFFFFF', color: '#334155', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #D7E4E1', background: view === 'list' ? '#E4F0EF' : '#FFFFFF', color: '#52685F', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
             >
               List
             </button>
             <button
               onClick={() => setView('kanban')}
-              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #D2D8DC', background: view === 'kanban' ? '#EAF0FE' : '#FFFFFF', color: '#334155', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
+              style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid #D7E4E1', background: view === 'kanban' ? '#E4F0EF' : '#FFFFFF', color: '#52685F', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}
             >
               Kanban
             </button>
@@ -439,7 +439,7 @@ export default function Opportunities({ currentUser, onNavigate }) {
               </button>
             )}
           </div>
-          {view === 'kanban' && <div style={{ fontSize: 11.5, color: '#9AA0A6', marginTop: -8 }}>Drag a card to another column to move it through the pipeline.</div>}
+          {view === 'kanban' && <div style={{ fontSize: 11.5, color: '#78908A', marginTop: -8 }}>Drag a card to another column to move it through the pipeline.</div>}
 
           {view === 'list' && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -454,32 +454,32 @@ export default function Opportunities({ currentUser, onNavigate }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search customer or location…"
-                style={{ border: '1px solid #D2D8DC', background: '#fff', padding: '9px 12px', borderRadius: 8, fontSize: 13, width: 240, fontFamily: 'inherit' }}
+                style={{ border: '1px solid #D7E4E1', background: '#fff', padding: '9px 12px', borderRadius: 8, fontSize: 13, width: 240, fontFamily: 'inherit' }}
               />
             </div>
           )}
 
-          {moveError && <div style={{ padding: '8px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{moveError}</div>}
-          {deleteError && <div style={{ padding: '8px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
+          {moveError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{moveError}</div>}
+          {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
 
-          {opportunities.length === 0 && <div style={{ padding: 20, color: '#6A7178' }}>No opportunities yet.</div>}
+          {opportunities.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No opportunities yet.</div>}
 
           {opportunities.length > 0 && view === 'list' && (
-            <div style={{ background: '#FFFFFF', border: '1px solid #E4E8EB', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLUMNS, padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#9AA0A6', borderBottom: '1px solid #E4E8EB' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLUMNS, padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1' }}>
                 <div>Customer</div><div>Capacity</div><div>Stage</div><div>Next action</div><div>Owner</div><div>Value</div><div>Updated</div><div>Actions</div>
               </div>
-              {filteredOpportunities.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: '#9AA0A6', fontSize: 14 }}>No opportunities match this filter.</div>}
+              {filteredOpportunities.length === 0 && <div style={{ padding: 40, textAlign: 'center', color: '#78908A', fontSize: 14 }}>No opportunities match this filter.</div>}
               {filteredOpportunities.map((o) => (
                 <div
                   key={o.entityId}
-                  style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLUMNS, padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #F0F2F4', alignItems: 'center' }}
+                  style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLUMNS, padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center' }}
                 >
-                  <div onClick={() => openDetail(o.entityId)} style={{ fontWeight: 600, color: '#141719', cursor: 'pointer' }}>
+                  <div onClick={() => openDetail(o.entityId)} style={{ fontWeight: 600, color: '#12201F', cursor: 'pointer' }}>
                     {o.customer}
-                    <div style={{ fontSize: 11, color: '#9AA0A6', fontWeight: 500 }}>{o.location}</div>
+                    <div style={{ fontSize: 11, color: '#78908A', fontWeight: 500 }}>{o.location}</div>
                   </div>
-                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#334155', cursor: 'pointer' }}>{o.capacity}</div>
+                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#52685F', cursor: 'pointer' }}>{o.capacity}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {canWrite ? (
                       <select
@@ -498,15 +498,15 @@ export default function Opportunities({ currentUser, onNavigate }) {
                     )}
                     {movingId === o.entityId && <Spinner size={12} />}
                   </div>
-                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#334155', cursor: 'pointer' }}>{o.next || '—'}</div>
+                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#52685F', cursor: 'pointer' }}>{o.next || '—'}</div>
                   <div onClick={() => openDetail(o.entityId)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 999, background: '#EAF0FE', color: '#1E4FC4', fontSize: 10.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 999, background: '#E4F0EF', color: '#12484B', fontSize: 10.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
                       {(o.owner || '?').trim().charAt(0).toUpperCase()}
                     </div>
-                    <div style={{ color: '#334155', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.owner || '—'}</div>
+                    <div style={{ color: '#52685F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.owner || '—'}</div>
                   </div>
-                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#141719', fontWeight: 600, cursor: 'pointer' }}>{o.value}</div>
-                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#9AA0A6', fontSize: 12, cursor: 'pointer' }}>{o.activity[0]?.tsLabel || '—'}</div>
+                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#12201F', fontWeight: 600, cursor: 'pointer' }}>{o.value}</div>
+                  <div onClick={() => openDetail(o.entityId)} style={{ color: '#78908A', fontSize: 12, cursor: 'pointer' }}>{o.activity[0]?.tsLabel || '—'}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <button type="button" onClick={() => openDetail(o.entityId)} style={linkBtnStyle}>View</button>
                     {canWrite && <button type="button" onClick={() => openDetailForEdit(o)} style={linkBtnStyle}>Edit</button>}
@@ -530,9 +530,9 @@ export default function Opportunities({ currentUser, onNavigate }) {
                     if (dragged) changeStage(dragged, col.key);
                     setDragId(null);
                   }}
-                  style={{ borderRadius: 10, padding: 4, background: dragId ? '#F5F7FA' : 'transparent' }}
+                  style={{ borderRadius: 10, padding: 4, background: dragId ? '#F4F8F7' : 'transparent' }}
                 >
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#334155', marginBottom: 8 }}>{col.stage}</div>
+                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#52685F', marginBottom: 8 }}>{col.stage}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 40 }}>
                     {col.cards.map((c) => (
                       <div
@@ -546,17 +546,17 @@ export default function Opportunities({ currentUser, onNavigate }) {
                         onClick={() => openDetail(c.entityId)}
                         style={{
                           background: '#FFFFFF',
-                          border: '1px solid #E4E8EB',
+                          border: '1px solid #D7E4E1',
                           borderRadius: 10,
                           padding: 12,
-                          boxShadow: '0 1px 2px rgba(20,23,25,0.05)',
+                          boxShadow: '0 1px 2px rgba(18,32,31,0.05)',
                           cursor: canWrite ? 'grab' : 'pointer',
                           opacity: movingId === c.entityId || dragId === c.entityId ? 0.5 : 1,
                         }}
                       >
-                        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#141719' }}>{c.customer}</div>
-                        <div style={{ fontSize: 11, color: '#6A7178', marginTop: 3 }}>{c.capacity} · {c.location}</div>
-                        <div style={{ fontSize: 11, color: '#9AA0A6', marginTop: 6 }}>{c.next}</div>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#12201F' }}>{c.customer}</div>
+                        <div style={{ fontSize: 11, color: '#52685F', marginTop: 3 }}>{c.capacity} · {c.location}</div>
+                        <div style={{ fontSize: 11, color: '#78908A', marginTop: 6 }}>{c.next}</div>
                         {canWrite && (
                           <>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
@@ -597,12 +597,12 @@ export default function Opportunities({ currentUser, onNavigate }) {
       {showDetail && (
         <div style={{ maxWidth: 1120, margin: '0 auto', width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
-            <button onClick={closeDetail} style={{ border: '1px solid #D2D8DC', background: '#fff', color: '#454B58', padding: '8px 13px', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>
+            <button onClick={closeDetail} style={{ border: '1px solid #D7E4E1', background: '#fff', color: '#12201F', padding: '8px 13px', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' }}>
               ← Back
             </button>
             <div>
               <div style={{ fontSize: 18, fontWeight: 800 }}>{selected.customer}</div>
-              <div style={{ fontSize: 12, color: '#9AA0A6', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{selected.id} · {selected.location || '—'}</div>
+              <div style={{ fontSize: 12, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{selected.id} · {selected.location || '—'}</div>
             </div>
             <div style={{ flex: 1 }} />
             {canWrite && (deletingId === selected.entityId ? <Spinner size={14} /> : <button type="button" onClick={() => removeOpportunity(selected)} style={{ ...dangerBtnStyle, fontSize: 12.5 }}>Delete</button>)}
@@ -616,23 +616,23 @@ export default function Opportunities({ currentUser, onNavigate }) {
                 const active = idx === currentIdx;
                 const done = idx < currentIdx;
                 const meta = OPPORTUNITY_STAGE_META[key];
-                const toneColor = { slate: '#334155', blue: '#2563EB', violet: '#6D28D9', amber: '#B45309', green: '#15803D' }[meta.tone] || '#334155';
+                const toneColor = { slate: '#52685F', blue: '#1F6E72', violet: '#2E9E8F', amber: '#8A5A16', green: '#1C8A4E' }[meta.tone] || '#52685F';
                 return (
                   <div key={key} style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
                     <div onClick={() => canWrite && openStageChangeModal(key)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, cursor: canWrite ? 'pointer' : 'default', flexShrink: 0 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontWeight: 800, fontSize: 13.5, boxSizing: 'border-box',
-                        background: active ? toneColor : (done ? '#EAF0FE' : '#fff'),
-                        color: active ? '#fff' : (done ? '#2563EB' : '#C3C7D1'),
-                        border: `2px solid ${active ? toneColor : (done ? '#2563EB' : '#D2D8DC')}`,
+                        background: active ? toneColor : (done ? '#E4F0EF' : '#fff'),
+                        color: active ? '#fff' : (done ? '#1F6E72' : '#D7E4E1'),
+                        border: `2px solid ${active ? toneColor : (done ? '#1F6E72' : '#D7E4E1')}`,
                       }}>
                         {done ? '✓' : idx + 1}
                       </div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: active ? '#141719' : (done ? '#454B58' : '#C3C7D1'), whiteSpace: 'nowrap' }}>{meta.label}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: active ? '#12201F' : (done ? '#12201F' : '#D7E4E1'), whiteSpace: 'nowrap' }}>{meta.label}</div>
                     </div>
                     {idx < STAGE_ORDER.length - 1 && (
-                      <div style={{ flex: 1, height: 2, background: done ? '#2563EB' : '#E4E8EB', margin: '0 8px 22px 8px' }} />
+                      <div style={{ flex: 1, height: 2, background: done ? '#1F6E72' : '#D7E4E1', margin: '0 8px 22px 8px' }} />
                     )}
                   </div>
                 );
@@ -648,14 +648,14 @@ export default function Opportunities({ currentUser, onNavigate }) {
                   {canWrite && !editingCore && <button onClick={() => startEditCore(selected)} style={linkBtnStyle}>Edit</button>}
                   {editingCore && (
                     <div style={{ display: 'flex', gap: 10 }}>
-                      <button onClick={cancelEditCore} disabled={savingCore} style={{ ...linkBtnStyle, color: '#9AA0A6' }}>Cancel</button>
-                      <button onClick={saveCore} disabled={savingCore} style={{ border: 'none', background: '#2563EB', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button onClick={cancelEditCore} disabled={savingCore} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
+                      <button onClick={saveCore} disabled={savingCore} style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                         {savingCore && <Spinner size={11} color="#fff" />}Save
                       </button>
                     </div>
                   )}
                 </div>
-                {coreError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{coreError}</div>}
+                {coreError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{coreError}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
                   {[
                     { key: 'customer', label: 'Customer' },
@@ -666,13 +666,13 @@ export default function Opportunities({ currentUser, onNavigate }) {
                     { key: 'nextAction', label: 'Next action' },
                   ].map((f) => (
                     <div key={f.key}>
-                      <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 5 }}>{f.label}</div>
+                      <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>{f.label}</div>
                       {editingCore ? (
                         <input
                           value={coreDraft[f.key] ?? ''}
                           onChange={(e) => setCoreDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                           type={f.key === 'value' ? 'number' : 'text'}
-                          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D2D8DC', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' }}
+                          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' }}
                         />
                       ) : (
                         <div style={{ fontSize: 14.5, fontWeight: 600 }}>{f.key === 'value' ? selected.value : (selected[f.key === 'nextAction' ? 'next' : f.key] || '—')}</div>
@@ -688,29 +688,29 @@ export default function Opportunities({ currentUser, onNavigate }) {
                   {canWrite && !editingStageData && <button onClick={startEditStageData} style={linkBtnStyle}>Edit</button>}
                   {editingStageData && (
                     <div style={{ display: 'flex', gap: 10 }}>
-                      <button onClick={cancelEditStageData} disabled={savingStageData} style={{ ...linkBtnStyle, color: '#9AA0A6' }}>Cancel</button>
-                      <button onClick={saveStageData} disabled={savingStageData} style={{ border: 'none', background: '#2563EB', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <button onClick={cancelEditStageData} disabled={savingStageData} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
+                      <button onClick={saveStageData} disabled={savingStageData} style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
                         {savingStageData && <Spinner size={11} color="#fff" />}Save
                       </button>
                     </div>
                   )}
                 </div>
-                {stageDataError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{stageDataError}</div>}
+                {stageDataError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{stageDataError}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
                   {(STAGE_FIELD_DEFS[selected.stageKey] || []).map((f) => {
                     const value = (selected.stageData[selected.stageKey] || {})[f.key] || '';
                     return (
                       <div key={f.key}>
-                        <div style={{ fontSize: 11.5, color: '#9AA0A6', marginBottom: 5 }}>{f.label}</div>
+                        <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>{f.label}</div>
                         {editingStageData ? (
                           <input
                             value={stageDraft[f.key] ?? ''}
                             onChange={(e) => setStageDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                             placeholder={f.placeholder}
-                            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D2D8DC', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' }}
+                            style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' }}
                           />
                         ) : (
-                          <div style={{ fontSize: 14.5, fontWeight: 600, color: value ? '#141719' : '#C3C7D1' }}>{value || '—'}</div>
+                          <div style={{ fontSize: 14.5, fontWeight: 600, color: value ? '#12201F' : '#D7E4E1' }}>{value || '—'}</div>
                         )}
                       </div>
                     );
@@ -726,9 +726,9 @@ export default function Opportunities({ currentUser, onNavigate }) {
                     value={docTitleDraft}
                     onChange={(e) => setDocTitleDraft(e.target.value)}
                     placeholder="e.g. Proposal, Site survey report"
-                    style={{ flex: '1 1 200px', border: '1px solid #D2D8DC', borderRadius: 6, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit' }}
+                    style={{ flex: '1 1 200px', border: '1px solid #D7E4E1', borderRadius: 6, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit' }}
                   />
-                  <label style={{ display: 'inline-flex', alignItems: 'center', padding: '9px 12px', border: '1px solid #D2D8DC', borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: '#334155', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', padding: '9px 12px', border: '1px solid #D7E4E1', borderRadius: 6, fontSize: 12.5, fontWeight: 600, color: '#52685F', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                     {docFiles.length > 0 ? `${docFiles.length} file(s)` : 'Choose file'}
                     <input type="file" multiple onChange={(e) => { addDocFiles(e.target.files); e.target.value = ''; }} style={{ display: 'none' }} />
                   </label>
@@ -744,28 +744,28 @@ export default function Opportunities({ currentUser, onNavigate }) {
                 {canWrite && docFiles.length > 0 && (
                   <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {docFiles.map((f, i) => (
-                      <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', background: '#F7F8F9', borderRadius: 6, fontSize: 12 }}>
+                      <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 8px', background: '#F4F8F7', borderRadius: 6, fontSize: 12 }}>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
-                        <span onClick={() => removeDocFile(i)} style={{ cursor: 'pointer', color: '#9AA0A6', marginLeft: 8 }}>×</span>
+                        <span onClick={() => removeDocFile(i)} style={{ cursor: 'pointer', color: '#78908A', marginLeft: 8 }}>×</span>
                       </div>
                     ))}
                   </div>
                 )}
-                {docError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{docError}</div>}
+                {docError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{docError}</div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {groupDocuments(selected.attachments).map((doc) => {
                     const expanded = !!expandedDocs[doc.title];
                     const latest = doc.versions[0];
                     return (
-                      <div key={doc.title} style={{ border: '1px solid #EEF0F3', background: '#FAFBFC', borderRadius: 9, padding: '12px 14px' }}>
+                      <div key={doc.title} style={{ border: '1px solid #E9F1EF', background: '#FFFFFF', borderRadius: 9, padding: '12px 14px' }}>
                         <div onClick={() => toggleDoc(doc.title)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                           <div style={{ fontSize: 13.5, fontWeight: 700 }}>{doc.title}</div>
-                          <div style={{ fontSize: 12, color: '#2563EB', fontWeight: 700 }}>v{latest.version} {expanded ? '▲' : '▼'}</div>
+                          <div style={{ fontSize: 12, color: '#1F6E72', fontWeight: 700 }}>v{latest.version} {expanded ? '▲' : '▼'}</div>
                         </div>
                         {expanded && (
                           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
                             {doc.versions.map((v) => (
-                              <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, color: '#75798A', borderTop: '1px solid #EEF0F3', paddingTop: 6 }}>
+                              <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, color: '#52685F', borderTop: '1px solid #E9F1EF', paddingTop: 6 }}>
                                 <div>v{v.version} · {v.fileName} · {formatBytes(v.sizeBytes)}</div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                   <span>{v.uploadedByName} · {v.date}</span>
@@ -778,7 +778,7 @@ export default function Opportunities({ currentUser, onNavigate }) {
                       </div>
                     );
                   })}
-                  {selected.attachments.length === 0 && <div style={{ fontSize: 13, color: '#9AA0A6' }}>No documents yet.</div>}
+                  {selected.attachments.length === 0 && <div style={{ fontSize: 13, color: '#78908A' }}>No documents yet.</div>}
                 </div>
               </div>
 
@@ -791,37 +791,37 @@ export default function Opportunities({ currentUser, onNavigate }) {
                       onChange={(e) => setNoteDraft(e.target.value)}
                       placeholder="Add a note about this opportunity…"
                       onKeyDown={(e) => { if (e.key === 'Enter') submitNote(); }}
-                      style={{ flex: 1, border: '1px solid #D2D8DC', borderRadius: 6, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit' }}
+                      style={{ flex: 1, border: '1px solid #D7E4E1', borderRadius: 6, padding: '9px 11px', fontSize: 13, fontFamily: 'inherit' }}
                     />
                     <button onClick={submitNote} disabled={addingNote || !noteDraft.trim()} style={{ ...primaryBtnStyle, opacity: addingNote || !noteDraft.trim() ? 0.6 : 1, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {addingNote && <Spinner size={11} color="#fff" />}Add
                     </button>
                   </div>
                 )}
-                {noteError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{noteError}</div>}
+                {noteError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{noteError}</div>}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {selected.notes.map((n) => (
-                    <div key={n.id} style={{ fontSize: 13.5, borderLeft: '2px solid #EEF0F3', paddingLeft: 12 }}>
-                      <div style={{ color: '#141719' }}>{n.text}</div>
-                      <div style={{ color: '#9AA0A6', fontSize: 12, marginTop: 4 }}>{n.who} · {n.tsLabel}</div>
+                    <div key={n.id} style={{ fontSize: 13.5, borderLeft: '2px solid #E9F1EF', paddingLeft: 12 }}>
+                      <div style={{ color: '#12201F' }}>{n.text}</div>
+                      <div style={{ color: '#78908A', fontSize: 12, marginTop: 4 }}>{n.who} · {n.tsLabel}</div>
                     </div>
                   ))}
-                  {selected.notes.length === 0 && <div style={{ fontSize: 13, color: '#9AA0A6' }}>No notes yet.</div>}
+                  {selected.notes.length === 0 && <div style={{ fontSize: 13, color: '#78908A' }}>No notes yet.</div>}
                 </div>
               </div>
             </div>
 
             <div style={{ position: 'sticky', top: 20, display: 'flex', flexDirection: 'column', gap: 22 }}>
-              {convertError && <div style={{ padding: '10px 12px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12.5 }}>{convertError}</div>}
+              {convertError && <div style={{ padding: '10px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{convertError}</div>}
               {canWrite && selected.stageKey === 'Won' && !selected.converted && (
-                <button onClick={convert} disabled={converting} style={{ width: '100%', boxSizing: 'border-box', background: '#047857', color: '#fff', border: 'none', padding: 14, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <button onClick={convert} disabled={converting} style={{ width: '100%', boxSizing: 'border-box', background: '#1C8A4E', color: '#fff', border: 'none', padding: 14, borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                   {converting && <Spinner size={13} color="#fff" />}Convert to project
                 </button>
               )}
               {selected.converted && (
-                <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ color: '#047857', fontWeight: 700, fontSize: 13.5 }}>✓ Converted to project</div>
-                  <button type="button" onClick={goToProjects} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', color: '#047857', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                <div style={{ background: '#E3F8EC', border: '1px solid #BFE9CE', borderRadius: 12, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ color: '#1C8A4E', fontWeight: 700, fontSize: 13.5 }}>✓ Converted to project</div>
+                  <button type="button" onClick={goToProjects} style={{ alignSelf: 'flex-start', border: 'none', background: 'transparent', color: '#1C8A4E', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
                     View project →
                   </button>
                 </div>
@@ -831,15 +831,15 @@ export default function Opportunities({ currentUser, onNavigate }) {
                 <div style={{ ...cardHeaderStyle, marginBottom: 14 }}>Audit trail</div>
                 <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 640, overflowY: 'auto' }}>
                   {selected.activity.map((a) => (
-                    <div key={a.id} style={{ display: 'flex', gap: 11, padding: '11px 0', borderBottom: '1px solid #F4F5F7' }}>
+                    <div key={a.id} style={{ display: 'flex', gap: 11, padding: '11px 0', borderBottom: '1px solid #F4F8F7' }}>
                       <div style={{ width: 8, height: 8, borderRadius: 999, background: a.dotColor, marginTop: 5, flex: 'none' }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 12.5, color: '#141719', lineHeight: 1.4 }}>{a.text}</div>
-                        <div style={{ fontSize: 11, color: '#9AA0A6', marginTop: 3 }}>{a.who} · {a.tsLabel}</div>
+                        <div style={{ fontSize: 12.5, color: '#12201F', lineHeight: 1.4 }}>{a.text}</div>
+                        <div style={{ fontSize: 11, color: '#78908A', marginTop: 3 }}>{a.who} · {a.tsLabel}</div>
                       </div>
                     </div>
                   ))}
-                  {selected.activity.length === 0 && <div style={{ fontSize: 13, color: '#9AA0A6' }}>No activity yet.</div>}
+                  {selected.activity.length === 0 && <div style={{ fontSize: 13, color: '#78908A' }}>No activity yet.</div>}
                 </div>
               </div>
             </div>
@@ -848,21 +848,21 @@ export default function Opportunities({ currentUser, onNavigate }) {
       )}
 
       {stageChangeOpen && (
-        <div onClick={cancelStageChange} style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,25,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div onClick={cancelStageChange} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: '#fff', width: 440, maxWidth: '92vw', borderRadius: 14, padding: '26px 28px', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
             <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>Move to {pendingStage ? OPPORTUNITY_STAGE_META[pendingStage].label : ''}</div>
-            <div style={{ fontSize: 12.5, color: '#9AA0A6', marginBottom: 16 }}>from {selected?.stage} · recorded in the audit trail</div>
-            <div style={{ fontSize: 12, color: '#454B58', fontWeight: 600, marginBottom: 6 }}>Note / comment (optional)</div>
+            <div style={{ fontSize: 12.5, color: '#78908A', marginBottom: 16 }}>from {selected?.stage} · recorded in the audit trail</div>
+            <div style={{ fontSize: 12, color: '#12201F', fontWeight: 600, marginBottom: 6 }}>Note / comment (optional)</div>
             <textarea
               value={stageChangeNote}
               onChange={(e) => setStageChangeNote(e.target.value)}
               placeholder="Why is this moving? Any context for the team…"
-              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D2D8DC', borderRadius: 7, padding: '9px 11px', fontSize: 13.5, fontFamily: 'inherit', minHeight: 84, resize: 'vertical' }}
+              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 7, padding: '9px 11px', fontSize: 13.5, fontFamily: 'inherit', minHeight: 84, resize: 'vertical' }}
             />
-            {stageChangeError && <div style={{ marginTop: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{stageChangeError}</div>}
+            {stageChangeError && <div style={{ marginTop: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{stageChangeError}</div>}
             <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-              <button onClick={cancelStageChange} disabled={stageChanging} style={{ flex: 1, border: '1px solid #D2D8DC', background: '#fff', padding: 11, borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}>Cancel</button>
-              <button onClick={confirmStageChange} disabled={stageChanging} style={{ flex: 1, border: 'none', background: '#2563EB', color: '#fff', padding: 11, borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button onClick={cancelStageChange} disabled={stageChanging} style={{ flex: 1, border: '1px solid #D7E4E1', background: '#fff', padding: 11, borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}>Cancel</button>
+              <button onClick={confirmStageChange} disabled={stageChanging} style={{ flex: 1, border: 'none', background: '#1F6E72', color: '#fff', padding: 11, borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {stageChanging && <Spinner size={12} color="#fff" />}Confirm move
               </button>
             </div>
@@ -873,17 +873,17 @@ export default function Opportunities({ currentUser, onNavigate }) {
       {showAddForm && (
         <div
           onClick={() => !creating && setShowAddForm(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(20,23,25,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <form
             onClick={(e) => e.stopPropagation()}
             onSubmit={submitAddForm}
-            style={{ width: 460, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(20,23,25,0.2)' }}
+            style={{ width: 460, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}
           >
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Add opportunity</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <Chip label="Qualifying" tone="slate" />
-              <span style={{ fontSize: 11.5, color: '#9AA0A6' }}>
+              <span style={{ fontSize: 11.5, color: '#78908A' }}>
                 Created {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} by {currentUser?.displayName || 'you'}
               </span>
             </div>
@@ -947,28 +947,28 @@ export default function Opportunities({ currentUser, onNavigate }) {
             />
 
             <div style={fieldLabelStyle}>Attachments (optional)</div>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 600, color: '#2563EB', cursor: 'pointer' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 8, fontSize: 12, fontWeight: 600, color: '#1F6E72', cursor: 'pointer' }}>
               + Choose files
               <input type="file" multiple onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }} style={{ display: 'none' }} />
             </label>
             {files.length > 0 && (
               <div style={{ marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {files.map((f, i) => (
-                  <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#F7F8F9', borderRadius: 6, fontSize: 12 }}>
+                  <div key={`${f.name}-${i}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 8px', background: '#F4F8F7', borderRadius: 6, fontSize: 12 }}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
-                    <span onClick={() => removeFile(i)} style={{ cursor: 'pointer', color: '#9AA0A6', flex: 'none', marginLeft: 8 }}>×</span>
+                    <span onClick={() => removeFile(i)} style={{ cursor: 'pointer', color: '#78908A', flex: 'none', marginLeft: 8 }}>×</span>
                   </div>
                 ))}
               </div>
             )}
 
-            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE9E7', color: '#B42318', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
+            {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#334155', border: '1px solid #D2D8DC', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+              <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
                 Cancel
               </button>
-              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {creating && <Spinner size={12} color="#fff" />}
                 Add opportunity
               </button>
