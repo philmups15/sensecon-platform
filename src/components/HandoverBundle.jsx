@@ -1,13 +1,33 @@
-const DEFAULT_ITEMS = [
-  { name: 'Commissioning record', meta: 'PDF · Signed off 12 Jun 2026', ext: 'PDF' },
-  { name: 'As-built drawings', meta: 'PDF · Rev C', ext: 'PDF' },
-  { name: 'Equipment warranties', meta: 'ZIP · 4 documents', ext: 'ZIP' },
-  { name: 'Spares list', meta: 'XLSX · 18 line items', ext: 'XLS' },
-  { name: 'O&M manuals', meta: 'PDF · Inverter + monitoring', ext: 'PDF' },
-  { name: 'Initial performance baseline', meta: 'PDF · First 30-day report', ext: 'PDF' },
-];
+import { useRef, useState } from 'react';
+import Spinner from './Spinner';
 
-export default function HandoverBundle({ items = DEFAULT_ITEMS, generatedDate = '12 Jun 2026' }) {
+export default function HandoverBundle({
+  items = [],
+  generatedDate = '—',
+  onDownload,
+  onUpload,
+  canUpload = false,
+  emptyLabel = 'No documents yet.',
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const fileInput = useRef(null);
+
+  const handleFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0 || !onUpload) return;
+    setUploading(true);
+    setError('');
+    try {
+      await onUpload(files);
+    } catch (err) {
+      setError(err.message || 'Failed to upload document.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div style={{ border: '1px solid #D7E4E1', borderRadius: 12, background: '#FFFFFF', overflow: 'hidden' }}>
       <div
@@ -20,11 +40,31 @@ export default function HandoverBundle({ items = DEFAULT_ITEMS, generatedDate = 
         }}
       >
         <div style={{ fontSize: 14, fontWeight: 700, color: '#12201F' }}>Handover bundle</div>
-        <div style={{ fontSize: 12, color: '#52685F' }}>Generated {generatedDate}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ fontSize: 12, color: '#52685F' }}>Generated {generatedDate}</div>
+          {canUpload && (
+            <>
+              <input ref={fileInput} type="file" multiple onChange={handleFiles} style={{ display: 'none' }} />
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                disabled={uploading}
+                style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: uploading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, opacity: uploading ? 0.7 : 1 }}
+              >
+                {uploading && <Spinner size={11} color="#fff" />}Upload
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {error && <div style={{ margin: '10px 18px 0', padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{error}</div>}
+
+      {items.length === 0 && <div style={{ padding: '18px', fontSize: 13, color: '#78908A' }}>{emptyLabel}</div>}
+
       {items.map((item, i) => (
         <div
-          key={i}
+          key={item.id ?? i}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -56,6 +96,9 @@ export default function HandoverBundle({ items = DEFAULT_ITEMS, generatedDate = 
             </div>
           </div>
           <button
+            type="button"
+            onClick={() => onDownload && onDownload(item)}
+            disabled={!onDownload}
             style={{
               border: '1px solid #D7E4E1',
               background: '#FFFFFF',
@@ -64,7 +107,7 @@ export default function HandoverBundle({ items = DEFAULT_ITEMS, generatedDate = 
               fontSize: 12,
               fontWeight: 600,
               color: '#52685F',
-              cursor: 'pointer',
+              cursor: onDownload ? 'pointer' : 'default',
             }}
           >
             Download
