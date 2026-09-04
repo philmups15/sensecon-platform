@@ -136,6 +136,26 @@ export const createWorkOrder = (data) => request('/api/workorders', { method: 'P
 export const updateWorkOrder = (id, data) => request(`/api/workorders/${id}`, { method: 'PUT', body: data });
 export const deleteWorkOrder = (id) => request(`/api/workorders/${id}`, { method: 'DELETE' });
 
+// ---- Plant handover attachments ----
+export const getPlantAttachments = (id) => request(`/api/plants/${id}/attachments`);
+export const uploadPlantAttachments = (id, files, title) => uploadFiles(`/api/plants/${id}/attachments`, files, title);
+export const downloadPlantAttachment = (id, attachmentId, fileName) =>
+  downloadFile(`/api/plants/${id}/attachments/${attachmentId}`, fileName);
+
+// ---- Commissioning test results ----
+// Fixed checklist per category — test names must match what's already been
+// recorded in the backend for a plant (upsert key is plant + category + name).
+export const COMMISSIONING_CHECKLIST = {
+  Dc: ['Insulation resistance', 'Open circuit voltage per string'],
+  Ac: ['Earth loop impedance', 'RCD trip time'],
+  Monitoring: ['Gateway comms link'],
+  Safety: ['Arc flash labelling', 'Lockout/tagout points'],
+};
+
+export const getCommissioningTests = (plantId) => request(`/api/plants/${plantId}/commissioning-tests`);
+export const recordCommissioningTest = (plantId, category, testName, result, notes) =>
+  request(`/api/plants/${plantId}/commissioning-tests`, { method: 'PUT', body: { category, testName, result, notes: notes || null } });
+
 // ---- Projects ----
 export const getProjects = () => request('/api/projects');
 export const getProject = (id) => request(`/api/projects/${id}`);
@@ -288,6 +308,24 @@ export const WORK_ORDER_STATUS_META = {
   Done: { label: 'Done' },
 };
 
+export const COMMISSIONING_RESULT_META = {
+  Pending: { label: 'Pending', tone: 'slate' },
+  Pass: { label: 'Pass', tone: 'green' },
+  Fail: { label: 'Fail — retest', tone: 'red' },
+};
+
+export function toCommissioningTestView(dto) {
+  const meta = COMMISSIONING_RESULT_META[dto.result] || COMMISSIONING_RESULT_META.Pending;
+  return {
+    category: dto.category,
+    test: dto.testName,
+    result: meta.label,
+    resultKey: dto.result,
+    tone: meta.tone,
+    notes: dto.notes || '',
+  };
+}
+
 export function toPlantView(dto) {
   const stageMeta = STAGE_META[dto.stage] || STAGE_META.Operating;
   const healthMeta = HEALTH_META[dto.health] || HEALTH_META.Unknown;
@@ -303,6 +341,8 @@ export function toPlantView(dto) {
     pr: dto.performanceRatio,
     health: healthMeta.label,
     healthTone: healthMeta.tone,
+    projectId: dto.projectId || null,
+    projectName: dto.projectName || '',
   };
 }
 
@@ -467,6 +507,7 @@ export function toSurveyView(dto) {
     statusKey: dto.status,
     projectId: dto.projectId || null,
     projectName: dto.projectName || '',
+    plantId: dto.plantId || null,
   };
 }
 
@@ -476,11 +517,13 @@ export function toDesignView(dto) {
     id: dto.code,
     entityId: dto.id,
     project: dto.projectName,
+    projectId: dto.projectId || null,
     status: statusMeta.label,
+    statusKey: dto.status,
     tone: statusMeta.tone,
     rev: dto.revision,
     survey: dto.surveyCode || '—',
-    surveyId: dto.surveyId,
+    surveyId: dto.surveyId || null,
   };
 }
 
@@ -491,9 +534,13 @@ export function toBomView(dto) {
     component: dto.component,
     qty: dto.quantity,
     unit: `$${Number(dto.unitCost).toLocaleString()}`,
+    rawUnitCost: dto.unitCost,
     supplier: dto.supplier,
     status: statusMeta.label,
+    statusKey: dto.status,
     tone: statusMeta.tone,
+    plantId: dto.plantId || null,
+    plantName: dto.plantName || '',
   };
 }
 
@@ -550,7 +597,7 @@ const SCREEN_MODULES = {
   projects: ['projects'],
   plants: ['plants'],
   workorders: ['workOrders'],
-  commissioning: ['nonConformities'],
+  commissioning: ['plants'],
   reports: ['reports'],
   portal: ['plants', 'workOrders'],
 };

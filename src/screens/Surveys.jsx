@@ -9,6 +9,8 @@ import {
   toSurveyView,
   getProjects,
   toProjectView,
+  getPlants,
+  toPlantView,
   SURVEY_STATUS_META,
   canAccess,
 } from '../lib/api';
@@ -31,7 +33,7 @@ const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px'
 const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
 const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
 
-const EMPTY_FORM = { plantName: '', surveyor: '', date: '', status: 'Scheduled', projectId: '' };
+const EMPTY_FORM = { plantName: '', surveyor: '', date: '', status: 'Scheduled', projectId: '', plantId: '' };
 
 function todayInputValue() {
   return new Date().toISOString().slice(0, 10);
@@ -42,6 +44,7 @@ export default function Surveys({ currentUser }) {
 
   const [surveys, setSurveys] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
@@ -64,11 +67,12 @@ export default function Surveys({ currentUser }) {
 
   const load = () => {
     setLoading(true);
-    Promise.all([getSurveys(), getProjects()])
-      .then(([surveyDtos, projectDtos]) => {
+    Promise.all([getSurveys(), getProjects(), getPlants()])
+      .then(([surveyDtos, projectDtos, plantDtos]) => {
         const views = surveyDtos.map(toSurveyView);
         setSurveys(views);
         setProjects(projectDtos.map(toProjectView));
+        setPlants(plantDtos.map(toPlantView));
         setSelectedId((prev) => (views.some((s) => s.entityId === prev) ? prev : (views[0]?.entityId ?? null)));
       })
       .catch((err) => setError(err.message || 'Failed to load surveys.'))
@@ -105,6 +109,7 @@ export default function Surveys({ currentUser }) {
         status: form.status,
         progress: 0,
         projectId: form.projectId || null,
+        plantId: form.plantId || null,
       });
       await refresh();
       setSelectedId(id);
@@ -124,6 +129,7 @@ export default function Surveys({ currentUser }) {
       status: s.statusKey,
       progress: s.progress,
       projectId: s.projectId || '',
+      plantId: s.plantId || '',
     });
     setSaveError('');
     setEditing(true);
@@ -142,6 +148,7 @@ export default function Surveys({ currentUser }) {
         status: draft.status,
         progress: Number(draft.progress) || 0,
         projectId: draft.projectId || null,
+        plantId: draft.plantId || null,
       });
       await refresh();
       setEditing(false);
@@ -165,6 +172,7 @@ export default function Surveys({ currentUser }) {
         status: 'SignedOff',
         progress: detail.progress,
         projectId: detail.projectId || null,
+        plantId: detail.plantId || null,
       });
       await refresh();
     } catch (err) {
@@ -262,6 +270,21 @@ export default function Surveys({ currentUser }) {
                     </select>
                   </div>
                   <div>
+                    <div style={fieldLabelStyle}>Plant</div>
+                    <select
+                      value={draft.plantId ?? ''}
+                      onChange={(e) => {
+                        const plantId = e.target.value;
+                        const plant = plants.find((pl) => pl.id === plantId);
+                        setDraft((d) => ({ ...d, plantId, plantName: plant ? plant.name : d.plantName }));
+                      }}
+                      style={smallInputStyle}
+                    >
+                      <option value="">— None —</option>
+                      {plants.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
                     <div style={fieldLabelStyle}>Surveyor</div>
                     <input value={draft.surveyor ?? ''} onChange={(e) => setDraft((d) => ({ ...d, surveyor: e.target.value }))} style={smallInputStyle} />
                   </div>
@@ -347,6 +370,20 @@ export default function Surveys({ currentUser }) {
             <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
               <option value="">— None —</option>
               {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+            </select>
+
+            <div style={fieldLabelStyle}>Plant</div>
+            <select
+              value={form.plantId}
+              onChange={(e) => {
+                const plantId = e.target.value;
+                const plant = plants.find((pl) => pl.id === plantId);
+                setForm((f) => ({ ...f, plantId, plantName: plant ? plant.name : f.plantName }));
+              }}
+              style={inputStyle}
+            >
+              <option value="">— None —</option>
+              {plants.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
             </select>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

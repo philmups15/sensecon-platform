@@ -10,6 +10,8 @@ import {
   getSurveys,
   createSurvey,
   toSurveyView,
+  getPlants,
+  toPlantView,
   STAGE_META,
   SURVEY_STATUS_META,
   canAccess,
@@ -36,7 +38,7 @@ const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#f
 const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
 
 const EMPTY_FORM = { name: '', customer: '', stage: 'DesignSurvey', projectManager: '', budget: '', actual: '' };
-const EMPTY_SURVEY_FORM = { plantName: '', surveyor: '', date: '', status: 'Scheduled' };
+const EMPTY_SURVEY_FORM = { plantName: '', surveyor: '', date: '', status: 'Scheduled', plantId: '' };
 
 function todayInputValue() {
   return new Date().toISOString().slice(0, 10);
@@ -48,6 +50,7 @@ export default function Projects({ currentUser }) {
 
   const [projects, setProjects] = useState([]);
   const [surveys, setSurveys] = useState([]);
+  const [plants, setPlants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
@@ -73,11 +76,12 @@ export default function Projects({ currentUser }) {
 
   const load = () => {
     setLoading(true);
-    Promise.all([getProjects(), getSurveys()])
-      .then(([projectDtos, surveyDtos]) => {
+    Promise.all([getProjects(), getSurveys(), getPlants()])
+      .then(([projectDtos, surveyDtos, plantDtos]) => {
         const views = projectDtos.map(toProjectView);
         setProjects(views);
         setSurveys(surveyDtos.map(toSurveyView));
+        setPlants(plantDtos.map(toPlantView));
         setSelectedId((prev) => (views.some((p) => p.entityId === prev) ? prev : (views[0]?.entityId ?? null)));
       })
       .catch((err) => setError(err.message || 'Failed to load projects.'))
@@ -187,7 +191,8 @@ export default function Projects({ currentUser }) {
   };
 
   const openSurveyForm = () => {
-    setSurveyForm({ ...EMPTY_SURVEY_FORM, plantName: detail?.name || '', date: todayInputValue() });
+    const linkedPlant = detail ? plants.find((pl) => pl.projectId === detail.entityId) : null;
+    setSurveyForm({ ...EMPTY_SURVEY_FORM, plantName: linkedPlant?.name || detail?.name || '', plantId: linkedPlant?.id || '', date: todayInputValue() });
     setSurveyError('');
     setShowSurveyForm(true);
   };
@@ -207,6 +212,7 @@ export default function Projects({ currentUser }) {
         status: surveyForm.status,
         progress: 0,
         projectId: detail.entityId,
+        plantId: surveyForm.plantId || null,
       });
       await refreshSurveys();
       setShowSurveyForm(false);
@@ -218,6 +224,7 @@ export default function Projects({ currentUser }) {
   };
 
   const linkedSurveys = detail ? surveys.filter((s) => s.projectId === detail.entityId) : [];
+  const linkedPlants = detail ? plants.filter((pl) => pl.projectId === detail.entityId) : [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -348,6 +355,24 @@ export default function Projects({ currentUser }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {detail && (
+        <div style={cardStyle}>
+          <div style={cardHeaderStyle}>Plant</div>
+          {linkedPlants.length === 0 && (
+            <div style={{ fontSize: 13, color: '#78908A', marginTop: 10 }}>No plant linked to this project yet.</div>
+          )}
+          {linkedPlants.map((pl) => (
+            <div key={pl.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13, marginTop: 10 }}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{pl.name}</div>
+                <div style={{ fontSize: 11.5, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace' }}>{pl.code}</div>
+              </div>
+              <Chip label={pl.stageLabel} tone={pl.tone} />
+            </div>
+          ))}
         </div>
       )}
 

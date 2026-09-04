@@ -240,12 +240,6 @@ export const plantOpenWork = [
   { id: 'WO-2276', title: 'String MC4 connector check — Row 4', priority: 'Medium', tone: 'amber' },
 ];
 
-export const plantActivity = [
-  { text: 'Performance ratio dropped below 70% threshold', time: '2 days ago' },
-  { text: 'Quarterly inspection completed', time: '3 weeks ago' },
-  { text: 'Handover signed off', time: '14 Mar 2026' },
-];
-
 // ---- Work orders ----
 export const workOrders = [
   { id: 'WO-2291', title: 'HVAC filter replacement', plant: 'Ndola Cold Storage', type: 'O&M', tone: 'blue', priority: 'High', assignee: 'Temba N.', col: 'Open' },
@@ -258,23 +252,7 @@ export const workOrders = [
 
 export const woColumnsList = ['Open', 'In progress', 'Review', 'Done'];
 
-export const woChecklist = [
-  { item: 'Isolate string before work', done: true },
-  { item: 'Replace filter media', done: true },
-  { item: 'Function test airflow', done: false },
-].map((c) => ({ ...c, boxColor: c.done ? '#1F6E72' : '#FFFFFF' }));
-
-export const woParts = [{ part: 'HVAC filter (20x20x1)', qty: 2 }];
-export const woDeviations = [{ note: 'Filter housing bracket corroded — logged for replacement', tone: 'amber' }];
-
 // ---- Commissioning ----
-export const commTypes = [
-  ['rooftop', 'Rooftop C&I'],
-  ['ground', 'Ground-mounted'],
-  ['hybrid', 'Hybrid'],
-  ['minigrid', 'Mini-grid'],
-];
-
 export const dcTests = [
   { test: 'Insulation resistance', result: 'Pass', tone: 'green' },
   { test: 'Open circuit voltage per string', result: 'Pass', tone: 'green' },
