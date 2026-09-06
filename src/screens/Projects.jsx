@@ -35,11 +35,44 @@ const smallInputStyle_ = { boxSizing: 'border-box', border: '1px solid #D7E4E1',
 
 const EMPTY_FORM = { name: '', customer: '', stage: 'DesignSurvey', projectManager: '', budget: '', actual: '' };
 
+// [tabKey, label, plantsOnly]
+const TAB_DEFS = [
+  ['overview', 'Overview', false],
+  ['survey', 'Site survey', false],
+  ['design', 'Design', false],
+  ['bom', 'BOM', false],
+  ['plant', 'Plant', true],
+  ['commissioning', 'Commissioning', true],
+  ['handover', 'Handover', true],
+  ['tasks', 'Tasks', false],
+  ['subs', 'Subcontractors', false],
+  ['risk', 'Risk register', false],
+  ['budget', 'Budget vs actual', false],
+];
+
 function Section({ title, children }) {
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: '18px 20px' }}>
-      <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 14 }}>{title}</div>
+      {title && <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 14 }}>{title}</div>}
       {children}
+    </div>
+  );
+}
+
+function TabStrip({ tabs, active, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap', borderBottom: '1px solid #D7E4E1' }}>
+      {tabs.map(([key, label]) => {
+        const on = active === key;
+        return (
+          <button key={key} type="button" onClick={() => onChange(key)}
+            style={{ padding: '9px 14px', fontSize: 12.5, fontWeight: on ? 700 : 500, cursor: 'pointer',
+              color: on ? '#12484B' : '#78908A', background: 'transparent', border: 'none',
+              borderBottom: `2px solid ${on ? '#1F6E72' : 'transparent'}`, marginBottom: -1 }}>
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -88,6 +121,7 @@ export default function Projects({ currentUser }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
+  const [tab, setTab] = useState('overview');
 
   const [full, setFull] = useState(null); // GetProjectById: milestones/tasks/subs/risks/budgetLines
   const [childError, setChildError] = useState('');
@@ -121,7 +155,7 @@ export default function Projects({ currentUser }) {
 
   const loadFull = (id) => { if (id) getProjectById(id).then(setFull).catch(() => setFull(null)); };
   useEffect(() => {
-    setFull(null); setChildError(''); setEditingCore(false);
+    setFull(null); setChildError(''); setEditingCore(false); setTab('overview');
     if (detail) loadFull(detail.entityId);
   }, [detail?.entityId]);
 
@@ -273,29 +307,32 @@ export default function Projects({ currentUser }) {
 
       {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
 
-      {/* Header + Overview */}
-      <Section title="Overview">
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div>
-            {!editingCore && <div style={{ fontSize: 16, fontWeight: 800 }}>{detail.name}</div>}
-            <div style={{ fontSize: 12, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{detail.id}</div>
-          </div>
-          {canWrite && !editingCore && (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => startEditCore(detail)} style={linkBtnStyle}>Edit</button>
-              {deletingId === eid ? <Spinner size={12} /> : <button type="button" onClick={() => removeProject(detail)} style={dangerBtnStyle}>Delete</button>}
-            </div>
-          )}
-          {editingCore && (
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setEditingCore(false)} disabled={savingCore} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
-              <button onClick={saveCore} disabled={savingCore} style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                {savingCore && <Spinner size={11} color="#fff" />}Save
-              </button>
-            </div>
-          )}
+      {/* Persistent header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>{detail.name}</div>
+          <div style={{ fontSize: 12, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{detail.id} · <Chip label={detail.stage} tone={detail.tone} /></div>
         </div>
+        {canWrite && !editingCore && (
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => { setTab('overview'); startEditCore(detail); }} style={linkBtnStyle}>Edit</button>
+            {deletingId === eid ? <Spinner size={12} /> : <button type="button" onClick={() => removeProject(detail)} style={dangerBtnStyle}>Delete</button>}
+          </div>
+        )}
+        {editingCore && (
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setEditingCore(false)} disabled={savingCore} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
+            <button onClick={saveCore} disabled={savingCore} style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 6, padding: '6px 12px', fontWeight: 700, fontSize: 12.5, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              {savingCore && <Spinner size={11} color="#fff" />}Save
+            </button>
+          </div>
+        )}
+      </div>
 
+      <TabStrip tabs={TAB_DEFS.filter(([, , plantsOnly]) => !plantsOnly || canReadPlants)} active={tab} onChange={setTab} />
+
+      {tab === 'overview' && (
+      <Section>
         {coreError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{coreError}</div>}
 
         {editingCore ? (
@@ -373,33 +410,47 @@ export default function Projects({ currentUser }) {
           )}
         </div>
       </Section>
+      )}
 
-      {canReadPlants && (
-        <Section title="Plant">
+      {tab === 'plant' && canReadPlants && (
+        <Section>
           <Plants key={`plt-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
         </Section>
       )}
 
-      <Section title="Site surveys">
-        <Surveys key={`srv-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
-      </Section>
+      {tab === 'survey' && (
+        <Section>
+          <Surveys key={`srv-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
+        </Section>
+      )}
 
-      <Section title="Design">
-        <Design key={`dsn-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
-      </Section>
+      {tab === 'design' && (
+        <Section>
+          <Design key={`dsn-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
+        </Section>
+      )}
 
-      <Section title="Bill of materials">
-        <Bom key={`bom-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
-      </Section>
+      {tab === 'bom' && (
+        <Section>
+          <Bom key={`bom-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
+        </Section>
+      )}
 
-      {canReadPlants && (
-        <Section title="Commissioning & handover">
-          <Commissioning key={`comm-${eid}-${dataSignal}`} projectScopeId={eid} currentUser={currentUser} />
+      {tab === 'commissioning' && canReadPlants && (
+        <Section>
+          <Commissioning key={`comm-${eid}-${dataSignal}`} projectScopeId={eid} currentUser={currentUser} view="tests" />
+        </Section>
+      )}
+
+      {tab === 'handover' && canReadPlants && (
+        <Section>
+          <Commissioning key={`ho-${eid}-${dataSignal}`} projectScopeId={eid} currentUser={currentUser} view="handover" />
         </Section>
       )}
 
       {/* Tasks */}
-      <Section title="Tasks">
+      {tab === 'tasks' && (
+      <Section>
         {!full ? <Spinner size={12} /> : (
           <>
             {(full.tasks || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No tasks yet.</div>}
@@ -438,9 +489,11 @@ export default function Projects({ currentUser }) {
           </>
         )}
       </Section>
+      )}
 
       {/* Subcontractors */}
-      <Section title="Subcontractors">
+      {tab === 'subs' && (
+      <Section>
         {!full ? <Spinner size={12} /> : (
           <>
             {(full.subcontractors || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No subcontractors yet.</div>}
@@ -478,9 +531,11 @@ export default function Projects({ currentUser }) {
           </>
         )}
       </Section>
+      )}
 
       {/* Risk register */}
-      <Section title="Risk register">
+      {tab === 'risk' && (
+      <Section>
         {!full ? <Spinner size={12} /> : (
           <>
             {(full.risks || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No risks logged yet.</div>}
@@ -523,9 +578,11 @@ export default function Projects({ currentUser }) {
           </>
         )}
       </Section>
+      )}
 
       {/* Budget vs actual */}
-      <Section title="Budget vs actual">
+      {tab === 'budget' && (
+      <Section>
         {!full ? <Spinner size={12} /> : (() => {
           const lines = full.budgetLines || [];
           const maxVal = Math.max(1, ...lines.map((b) => Math.max(b.budgetAmount, b.actualAmount)));
@@ -573,6 +630,7 @@ export default function Projects({ currentUser }) {
           );
         })()}
       </Section>
+      )}
     </div>
   );
 }
