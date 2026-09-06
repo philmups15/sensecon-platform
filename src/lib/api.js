@@ -45,10 +45,11 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   return res.json();
 }
 
-async function uploadFiles(path, files, title) {
+async function uploadFiles(path, files, title, extra = {}, fieldName = 'files') {
   const formData = new FormData();
-  files.forEach((file) => formData.append('files', file));
+  files.forEach((file) => formData.append(fieldName, file));
   if (title) formData.append('title', title);
+  Object.entries(extra).forEach(([k, v]) => { if (v != null && v !== '') formData.append(k, v); });
 
   const headers = {};
   const token = getToken();
@@ -67,6 +68,7 @@ async function uploadFiles(path, files, title) {
     throw new Error(detail);
   }
 
+  if (res.status === 204) return undefined;
   return res.json();
 }
 
@@ -153,8 +155,75 @@ export const COMMISSIONING_CHECKLIST = {
 };
 
 export const getCommissioningTests = (plantId) => request(`/api/plants/${plantId}/commissioning-tests`);
+export const getCommissioningChecklist = (plantId) => request(`/api/plants/${plantId}/commissioning-checklist`);
 export const recordCommissioningTest = (plantId, category, testName, result, notes) =>
   request(`/api/plants/${plantId}/commissioning-tests`, { method: 'PUT', body: { category, testName, result, notes: notes || null } });
+
+// ---- Commissioning templates (admin) ----
+export const getCommissioningTemplates = () => request('/api/commissioning-templates');
+export const upsertCommissioningTemplate = (data) => request('/api/commissioning-templates', { method: 'POST', body: data });
+export const deleteCommissioningTemplate = (id) => request(`/api/commissioning-templates/${id}`, { method: 'DELETE' });
+
+// ---- Handover ----
+export const getHandover = (plantId) => request(`/api/plants/${plantId}/handover`);
+export const upsertHandover = (plantId, data) => request(`/api/plants/${plantId}/handover`, { method: 'PUT', body: data });
+export const signOffHandover = (plantId) => request(`/api/plants/${plantId}/handover/sign-off`, { method: 'POST' });
+export const uploadHandoverCertificate = (plantId, file) =>
+  uploadFiles(`/api/plants/${plantId}/handover/certificate`, [file], null, {}, 'file');
+export const downloadHandoverCertificate = (plantId, fileName) =>
+  downloadFile(`/api/plants/${plantId}/handover/certificate`, fileName);
+
+// ---- Dashboard ----
+export const getDashboard = () => request('/api/dashboard');
+
+// ---- Design attachments / revisions / specs ----
+export const getDesignAttachments = (id) => request(`/api/designs/${id}/attachments`);
+export const uploadDesignAttachments = (id, files, title) => uploadFiles(`/api/designs/${id}/attachments`, files, title);
+export const downloadDesignAttachment = (id, attId, fileName) => downloadFile(`/api/designs/${id}/attachments/${attId}`, fileName);
+export const addDesignRevision = (id, revision, note) => request(`/api/designs/${id}/revisions`, { method: 'POST', body: { revision, note: note || null } });
+export const updateDesignSpecs = (id, tab, fields) => request(`/api/designs/${id}/specs/${tab}`, { method: 'PUT', body: { fields } });
+
+// ---- Survey measurements / obstructions / photos ----
+export const addSurveyMeasurement = (id, data) => request(`/api/surveys/${id}/measurements`, { method: 'POST', body: data });
+export const updateSurveyMeasurement = (id, itemId, data) => request(`/api/surveys/${id}/measurements/${itemId}`, { method: 'PUT', body: data });
+export const deleteSurveyMeasurement = (id, itemId) => request(`/api/surveys/${id}/measurements/${itemId}`, { method: 'DELETE' });
+export const addSurveyObstruction = (id, data) => request(`/api/surveys/${id}/obstructions`, { method: 'POST', body: data });
+export const updateSurveyObstruction = (id, itemId, data) => request(`/api/surveys/${id}/obstructions/${itemId}`, { method: 'PUT', body: data });
+export const deleteSurveyObstruction = (id, itemId) => request(`/api/surveys/${id}/obstructions/${itemId}`, { method: 'DELETE' });
+export const uploadSurveyPhotos = (id, files, title, gps) => uploadFiles(`/api/surveys/${id}/photos`, files, title, { gps });
+export const downloadSurveyPhoto = (id, photoId, fileName) => downloadFile(`/api/surveys/${id}/photos/${photoId}`, fileName);
+export const surveyPhotoBlobUrl = (id, photoId) => fetchBlobUrl(`/api/surveys/${id}/photos/${photoId}`);
+export const deleteSurveyPhoto = (id, photoId) => request(`/api/surveys/${id}/photos/${photoId}`, { method: 'DELETE' });
+
+// ---- Work-order children ----
+export const addWorkOrderChecklistItem = (id, data) => request(`/api/workorders/${id}/checklist`, { method: 'POST', body: data });
+export const updateWorkOrderChecklistItem = (id, itemId, data) => request(`/api/workorders/${id}/checklist/${itemId}`, { method: 'PUT', body: data });
+export const deleteWorkOrderChecklistItem = (id, itemId) => request(`/api/workorders/${id}/checklist/${itemId}`, { method: 'DELETE' });
+export const addWorkOrderPart = (id, data) => request(`/api/workorders/${id}/parts`, { method: 'POST', body: data });
+export const updateWorkOrderPart = (id, itemId, data) => request(`/api/workorders/${id}/parts/${itemId}`, { method: 'PUT', body: data });
+export const deleteWorkOrderPart = (id, itemId) => request(`/api/workorders/${id}/parts/${itemId}`, { method: 'DELETE' });
+export const addWorkOrderLabour = (id, data) => request(`/api/workorders/${id}/labour`, { method: 'POST', body: data });
+export const updateWorkOrderLabour = (id, itemId, data) => request(`/api/workorders/${id}/labour/${itemId}`, { method: 'PUT', body: data });
+export const deleteWorkOrderLabour = (id, itemId) => request(`/api/workorders/${id}/labour/${itemId}`, { method: 'DELETE' });
+export const uploadWorkOrderAttachments = (id, files, title) => uploadFiles(`/api/workorders/${id}/attachments`, files, title);
+export const downloadWorkOrderAttachment = (id, attId, fileName) => downloadFile(`/api/workorders/${id}/attachments/${attId}`, fileName);
+export const getWorkOrderById = (id) => request(`/api/workorders/${id}`);
+
+// ---- Project children ----
+const projectChild = (kind) => ({
+  add: (id, data) => request(`/api/projects/${id}/${kind}`, { method: 'POST', body: data }),
+  update: (id, itemId, data) => request(`/api/projects/${id}/${kind}/${itemId}`, { method: 'PUT', body: data }),
+  remove: (id, itemId) => request(`/api/projects/${id}/${kind}/${itemId}`, { method: 'DELETE' }),
+});
+export const projectMilestones = projectChild('milestones');
+export const projectTasks = projectChild('tasks');
+export const projectSubcontractors = projectChild('subcontractors');
+export const projectRisks = projectChild('risks');
+export const projectBudgetLines = projectChild('budget-lines');
+
+// ---- BOM cost variance + report catalogue ----
+export const getBomCostVariance = (projectId) => request(`/api/bomitems/cost-variance?projectId=${projectId}`);
+export const getReportCatalogue = () => request('/api/reports/catalogue');
 
 // ---- Projects ----
 export const getProjects = () => request('/api/projects');
@@ -314,6 +383,66 @@ export const COMMISSIONING_RESULT_META = {
   Fail: { label: 'Fail — retest', tone: 'red' },
 };
 
+export const PLANT_TYPE_META = {
+  RooftopCommercial: { label: 'Rooftop C&I' },
+  GroundMount: { label: 'Ground-mounted' },
+  Hybrid: { label: 'Hybrid' },
+  MiniGrid: { label: 'Mini-grid' },
+};
+
+export const BOM_CATEGORY_META = {
+  Modules: { label: 'Modules' },
+  Inverters: { label: 'Inverters' },
+  Structure: { label: 'Structure' },
+  BalanceOfSystem: { label: 'Balance of system' },
+  Cabling: { label: 'Cabling' },
+  Labour: { label: 'Labour' },
+  Other: { label: 'Other' },
+};
+
+export const MILESTONE_STATE_META = {
+  Upcoming: { label: 'Upcoming', tone: 'slate' },
+  Current: { label: 'Current', tone: 'blue' },
+  Done: { label: 'Done', tone: 'green' },
+};
+
+export const PROJECT_TASK_STATUS_META = {
+  NotStarted: { label: 'Not started', tone: 'slate' },
+  InProgress: { label: 'In progress', tone: 'blue' },
+  Blocked: { label: 'Blocked', tone: 'red' },
+  Done: { label: 'Done', tone: 'green' },
+};
+
+export const SUBCONTRACTOR_STATUS_META = {
+  Active: { label: 'Active', tone: 'blue' },
+  Completed: { label: 'Completed', tone: 'green' },
+  Terminated: { label: 'Terminated', tone: 'red' },
+};
+
+export const RISK_SEVERITY_META = {
+  Low: { label: 'Low', tone: 'blue' },
+  Medium: { label: 'Medium', tone: 'amber' },
+  High: { label: 'High', tone: 'red' },
+};
+
+export const RISK_STATUS_META = {
+  Open: { label: 'Open', tone: 'amber' },
+  Mitigated: { label: 'Mitigated', tone: 'blue' },
+  Closed: { label: 'Closed', tone: 'green' },
+};
+
+export const HANDOVER_STATUS_META = {
+  Draft: { label: 'Draft', tone: 'slate' },
+  SignedOff: { label: 'Signed off', tone: 'green' },
+};
+
+export const REPORT_TYPE_META = {
+  MonthlyPerformance: { label: 'Monthly performance summary' },
+  SlaCompliance: { label: 'SLA compliance report' },
+  PortfolioHealth: { label: 'Portfolio health report' },
+  HandoverAudit: { label: 'Handover audit report' },
+};
+
 export function toCommissioningTestView(dto) {
   const meta = COMMISSIONING_RESULT_META[dto.result] || COMMISSIONING_RESULT_META.Pending;
   return {
@@ -340,7 +469,12 @@ export function toPlantView(dto) {
     equip: dto.equipment,
     pr: dto.performanceRatio,
     health: healthMeta.label,
+    healthKey: dto.health,
     healthTone: healthMeta.tone,
+    type: dto.type,
+    typeLabel: (PLANT_TYPE_META[dto.type] || {}).label || dto.type,
+    latitude: dto.latitude ?? null,
+    longitude: dto.longitude ?? null,
     projectId: dto.projectId || null,
     projectName: dto.projectName || '',
   };
@@ -357,11 +491,15 @@ export function toWorkOrderView(dto) {
     plant: dto.plantName,
     plantId: dto.plantId,
     type: typeMeta.label,
+    typeKey: dto.type,
     tone: typeMeta.tone,
     priority: priorityMeta.label,
+    priorityKey: dto.priority,
     priorityTone: priorityMeta.tone,
     assignee: dto.assignee,
+    dueDate: dto.dueDate || null,
     col: statusMeta.label,
+    statusKey: dto.status,
   };
 }
 
@@ -532,6 +670,8 @@ export function toBomView(dto) {
   return {
     entityId: dto.id,
     component: dto.component,
+    category: dto.category,
+    categoryLabel: (BOM_CATEGORY_META[dto.category] || {}).label || dto.category,
     qty: dto.quantity,
     unit: `$${Number(dto.unitCost).toLocaleString()}`,
     rawUnitCost: dto.unitCost,
@@ -541,6 +681,8 @@ export function toBomView(dto) {
     tone: statusMeta.tone,
     plantId: dto.plantId || null,
     plantName: dto.plantName || '',
+    projectId: dto.projectId || null,
+    projectName: dto.projectName || '',
   };
 }
 
@@ -598,6 +740,7 @@ const SCREEN_MODULES = {
   plants: ['plants'],
   workorders: ['workOrders'],
   commissioning: ['plants'],
+  nonconformities: ['nonConformities'],
   reports: ['reports'],
   portal: ['plants', 'workOrders'],
 };
@@ -616,7 +759,9 @@ export function toNonConformityView(dto) {
     id: dto.code,
     desc: dto.description,
     plant: dto.plantName,
+    plantId: dto.plantId || null,
     status: statusMeta.label,
+    statusKey: dto.status,
     tone: statusMeta.tone,
   };
 }
@@ -625,6 +770,7 @@ export function toReportView(dto) {
   return {
     entityId: dto.id,
     name: dto.name,
+    type: dto.type,
     by: dto.generatedBy || 'You',
     date: formatDate(dto.generatedDate),
   };
