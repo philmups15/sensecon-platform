@@ -5,7 +5,6 @@ import Surveys from './Surveys';
 import Design from './Design';
 import Bom from './Bom';
 import Plants from './Plants';
-import Commissioning from './Commissioning';
 import {
   getProjects,
   getProjectById,
@@ -42,8 +41,6 @@ const TAB_DEFS = [
   ['design', 'Design', false],
   ['bom', 'BOM', false],
   ['plant', 'Plant', true],
-  ['commissioning', 'Commissioning', true],
-  ['handover', 'Handover', true],
   ['tasks', 'Tasks', false],
   ['subs', 'Subcontractors', false],
   ['risk', 'Risk register', false],
@@ -433,18 +430,6 @@ export default function Projects({ currentUser }) {
       {tab === 'bom' && (
         <Section>
           <Bom key={`bom-${eid}-${dataSignal}`} projectScopeId={eid} projectName={pname} currentUser={currentUser} onChanged={bump} />
-        </Section>
-      )}
-
-      {tab === 'commissioning' && canReadPlants && (
-        <Section>
-          <Commissioning key={`comm-${eid}-${dataSignal}`} projectScopeId={eid} currentUser={currentUser} view="tests" />
-        </Section>
-      )}
-
-      {tab === 'handover' && canReadPlants && (
-        <Section>
-          <Commissioning key={`ho-${eid}-${dataSignal}`} projectScopeId={eid} currentUser={currentUser} view="handover" />
         </Section>
       )}
 

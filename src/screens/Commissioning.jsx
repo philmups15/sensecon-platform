@@ -5,6 +5,8 @@ import Spinner from '../components/Spinner';
 import {
   getPlants,
   toPlantView,
+  getProjects,
+  toProjectView,
   getNonConformities,
   toNonConformityView,
   getCommissioningChecklist,
@@ -30,25 +32,34 @@ function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-GB'
 function attachmentExt(fn) { const d = fn.lastIndexOf('.'); return d === -1 ? 'FILE' : fn.slice(d + 1).toUpperCase().slice(0, 4); }
 function formatBytes(b) { if (!b) return '0 KB'; const kb = b / 1024; return kb < 1024 ? `${kb.toFixed(0)} KB` : `${(kb / 1024).toFixed(1)} MB`; }
 
-function TestGroup({ title, tests, canWrite, onChange, savingKey }) {
+function TestGroup({ title, tests, canWrite, onSave, savingKey }) {
   if (tests.length === 0) return null;
   return (
     <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 16 }}>
       <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>{title}</div>
       {tests.map((t) => (
-        <div key={t.testName} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13, gap: 10 }}>
-          <span>{t.testName}</span>
+        <div key={t.testName} style={{ padding: '8px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+            <span>{t.testName}</span>
+            {canWrite ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                {savingKey === `${t.category}:${t.testName}` && <Spinner size={12} />}
+                <select value={t.result} onChange={(e) => onSave(t.category, t.testName, { result: e.target.value })}
+                  style={{ border: '1px solid #D7E4E1', borderRadius: 6, padding: '4px 6px', fontSize: 12, fontFamily: 'inherit' }}>
+                  {RESULT_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+                </select>
+              </div>
+            ) : (
+              <Chip label={(COMMISSIONING_RESULT_META[t.result] || {}).label || t.result} tone={RESULT_TONE[t.result]} />
+            )}
+          </div>
           {canWrite ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {savingKey === `${t.category}:${t.testName}` && <Spinner size={12} />}
-              <select value={t.result} onChange={(e) => onChange(t.category, t.testName, e.target.value)}
-                style={{ border: '1px solid #D7E4E1', borderRadius: 6, padding: '4px 6px', fontSize: 12, fontFamily: 'inherit' }}>
-                {RESULT_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
-              </select>
-            </div>
-          ) : (
-            <Chip label={(COMMISSIONING_RESULT_META[t.result] || {}).label || t.result} tone={RESULT_TONE[t.result]} />
-          )}
+            <input defaultValue={t.notes || ''} placeholder="Notes…"
+              onBlur={(e) => { if ((e.target.value || '') !== (t.notes || '')) onSave(t.category, t.testName, { notes: e.target.value }); }}
+              style={{ width: '100%', boxSizing: 'border-box', marginTop: 6, border: '1px solid #E9F1EF', borderRadius: 6, padding: '5px 8px', fontSize: 12, fontFamily: 'inherit', color: '#52685F' }} />
+          ) : t.notes ? (
+            <div style={{ marginTop: 4, fontSize: 11.5, color: '#78908A' }}>{t.notes}</div>
+          ) : null}
         </div>
       ))}
     </div>
@@ -62,6 +73,8 @@ export default function Commissioning({ currentUser, projectScopeId, view }) {
   const showHandover = !view || view === 'handover';
 
   const [plants, setPlants] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [projectId, setProjectId] = useState('');
   const [plantId, setPlantId] = useState(null);
   const [tests, setTests] = useState([]);
   const [testsLoading, setTestsLoading] = useState(true);
@@ -79,16 +92,26 @@ export default function Commissioning({ currentUser, projectScopeId, view }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([getPlants(), getNonConformities()])
-      .then(([plantDtos, ncDtos]) => {
+    Promise.all([getPlants(), getNonConformities(), scoped ? Promise.resolve([]) : getProjects()])
+      .then(([plantDtos, ncDtos, projectDtos]) => {
         const pv = plantDtos.map(toPlantView).filter((p) => !projectScopeId || p.projectId === projectScopeId);
         setPlants(pv);
         setPlantId(pv[0]?.id ?? null);
+        setProjects(projectDtos.map(toProjectView));
         setNonConformities(ncDtos.map(toNonConformityView));
       })
       .catch((err) => setError(err.message || 'Failed to load commissioning data.'))
       .finally(() => setLoading(false));
   }, []);
+
+  // Narrow the plant list to the chosen project (top-level screen only).
+  const visiblePlants = (!scoped && projectId) ? plants.filter((p) => p.projectId === projectId) : plants;
+
+  const pickProject = (pid) => {
+    setProjectId(pid);
+    const pool = pid ? plants.filter((p) => p.projectId === pid) : plants;
+    setPlantId(pool[0]?.id ?? null);
+  };
 
   const loadTests = (id) => {
     setTestsLoading(true); setTestsError('');
@@ -107,10 +130,15 @@ export default function Commissioning({ currentUser, projectScopeId, view }) {
     loadTests(plantId); loadAttachments(plantId); loadHandover(plantId);
   }, [plantId]);
 
-  const handleTestChange = async (category, testName, result) => {
+  const saveTest = async (category, testName, patch) => {
+    const row = tests.find((t) => t.category === category && t.testName === testName) || {};
     setSavingKey(`${category}:${testName}`); setTestsError('');
     try {
-      await recordCommissioningTest(plantId, category, testName, result, null);
+      await recordCommissioningTest(
+        plantId, category, testName,
+        patch.result ?? row.result ?? 'Pending',
+        patch.notes ?? row.notes ?? null,
+      );
       loadTests(plantId); loadHandover(plantId);
     } catch (err) { setTestsError(err.message || 'Failed to save.'); }
     finally { setSavingKey(null); }
@@ -166,32 +194,45 @@ export default function Commissioning({ currentUser, projectScopeId, view }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
         {plant && <span style={{ fontSize: 12, color: '#78908A' }}>{plant.typeLabel}</span>}
+        {!scoped && (
+          <>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#52685F' }}>Project</span>
+            <select value={projectId} onChange={(e) => pickProject(e.target.value)} style={{ border: '1px solid #D7E4E1', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, fontFamily: 'inherit' }}>
+              <option value="">All projects</option>
+              {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+            </select>
+          </>
+        )}
         <span style={{ fontSize: 12, fontWeight: 600, color: '#52685F' }}>Plant</span>
         {scoped && plants.length <= 1 ? (
           <span style={{ fontSize: 12.5, fontWeight: 600, color: '#12201F' }}>{plant?.name}</span>
         ) : (
           <select value={plantId ?? ''} onChange={(e) => setPlantId(e.target.value)} style={{ border: '1px solid #D7E4E1', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, fontFamily: 'inherit' }}>
-            {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {visiblePlants.length === 0 && <option value="">No plants for this project</option>}
+            {visiblePlants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
         )}
       </div>
 
       {showTests && testsError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{testsError}</div>}
 
-      {showTests && (testsLoading ? (
+      {showTests && !plantId && <div style={{ padding: 20, color: '#78908A', fontSize: 13 }}>No plant selected — this project has no plant yet.</div>}
+
+      {showTests && plantId && (testsLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A' }}><Spinner size={14} />Loading checklist…</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
           {Object.entries(CATEGORY_TITLES).map(([cat, title]) => (
-            <TestGroup key={cat} title={title} tests={tests.filter((t) => t.category === cat)} canWrite={canWrite} onChange={handleTestChange} savingKey={savingKey} />
+            <TestGroup key={`${cat}-${plantId}`} title={title} tests={tests.filter((t) => t.category === cat)} canWrite={canWrite} onSave={saveTest} savingKey={savingKey} />
           ))}
         </div>
       ))}
 
       {/* Handover */}
-      {showHandover && (<>
+      {showHandover && !plantId && <div style={{ padding: 20, color: '#78908A', fontSize: 13 }}>No plant selected — this project has no plant yet.</div>}
+      {showHandover && plantId && (<>
       <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700 }}>Handover</div>
