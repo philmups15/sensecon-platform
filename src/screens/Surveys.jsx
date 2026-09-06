@@ -265,7 +265,7 @@ export default function Surveys({ currentUser, projectScopeId, projectName, onCh
       {visibleSurveys.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No surveys yet.</div>}
 
       {visibleSurveys.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 16, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: scoped ? 'minmax(180px, 300px) minmax(0, 1fr)' : '360px 1fr', gap: 16, alignItems: 'start' }}>
           <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
             {visibleSurveys.map((sv) => (
               <div key={sv.entityId} onClick={() => setSelectedId(sv.entityId)} style={{ padding: '13px 16px', borderBottom: '1px solid #E9F1EF', cursor: 'pointer', background: sv.entityId === selectedId ? '#E4F0EF' : 'transparent' }}>
@@ -393,7 +393,7 @@ export default function Surveys({ currentUser, projectScopeId, projectName, onCh
               {!full ? <Spinner size={12} /> : (full.photos || []).length === 0 ? (
                 <div style={{ fontSize: 12, color: '#78908A' }}>No photos captured yet.</div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${scoped ? 4 : 6},1fr)`, gap: 8 }}>
                   {full.photos.map((p) => (
                     <PhotoThumb key={p.id} surveyId={detail.entityId} photo={p} canWrite={canWrite}
                       onDelete={async () => { try { await deleteSurveyPhoto(detail.entityId, p.id); refreshFull(); } catch (err) { setChildError(err.message || 'Delete failed.'); } }} />
@@ -401,7 +401,7 @@ export default function Surveys({ currentUser, projectScopeId, projectName, onCh
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginTop: 20 }}>
                 <div>
                   <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Measurements</div>
                   {!full ? <Spinner size={12} /> : (full.measurements || []).map((m) => (
