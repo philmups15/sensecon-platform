@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import Spinner from '../components/Spinner';
-import { login, register } from '../lib/api';
+import { login, register, forgotPassword } from '../lib/api';
 
 export default function Login({ onSignIn }) {
-  const [mode, setMode] = useState('signin');
+  const [mode, setMode] = useState('signin'); // 'signin' | 'register' | 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+
+  const switchMode = (next) => { setMode(next); setError(''); setForgotSent(false); };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -17,10 +20,14 @@ export default function Login({ onSignIn }) {
     try {
       if (mode === 'signin') {
         await login(email, password);
-      } else {
+        onSignIn();
+      } else if (mode === 'register') {
         await register(email, password, displayName);
+        onSignIn();
+      } else {
+        await forgotPassword(email);
+        setForgotSent(true);
       }
-      onSignIn();
     } catch (err) {
       setError(err.message || 'Something went wrong.');
     } finally {
@@ -39,60 +46,99 @@ export default function Login({ onSignIn }) {
           <div style={{ fontFamily: "'Manrope', sans-serif", fontSize: 17, fontWeight: 800, color: '#12484B' }}>Sencecon</div>
         </div>
 
-        {mode === 'register' && (
+        {mode === 'forgot' && forgotSent ? (
           <>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>Full name</div>
+            <div style={{ fontSize: 13, color: '#1C8A4E', marginBottom: 18 }}>
+              If an account exists for <strong>{email}</strong>, a password-reset link is on its way. It expires in 24 hours.
+            </div>
+            <button
+              type="button"
+              onClick={() => switchMode('signin')}
+              style={{ width: '100%', padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: 'pointer' }}
+            >
+              Back to sign in
+            </button>
+          </>
+        ) : (
+          <>
+            {mode === 'forgot' && (
+              <div style={{ fontSize: 13, color: '#52685F', marginBottom: 16 }}>
+                Enter your work email and we'll send you a link to set a new password.
+              </div>
+            )}
+
+            {mode === 'register' && (
+              <>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>Full name</div>
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  required
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 14 }}
+                  placeholder="Jane Mwansa"
+                />
+              </>
+            )}
+
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>Work email</div>
             <input
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 14 }}
-              placeholder="Jane Mwansa"
+              placeholder="you@karibasolar.co.zm"
             />
+
+            {mode !== 'forgot' && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#52685F' }}>Password</span>
+                  {mode === 'signin' && (
+                    <button
+                      type="button"
+                      onClick={() => switchMode('forgot')}
+                      style={{ border: 'none', background: 'transparent', color: '#1F6E72', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                    >
+                      Forgot password?
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 18 }}
+                  placeholder="••••••••"
+                />
+              </>
+            )}
+
+            {error && (
+              <div style={{ marginBottom: 14, padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ width: '100%', padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: loading ? 'default' : 'pointer', marginBottom: 10, marginTop: mode === 'forgot' ? 4 : 0, opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            >
+              {loading && <Spinner size={14} color="#fff" />}
+              {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'register' ? 'Create account' : 'Send reset link'}
+            </button>
+            <button
+              type="button"
+              onClick={() => switchMode(mode === 'signin' ? 'register' : 'signin')}
+              style={{ width: '100%', padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            >
+              {mode === 'signin' ? 'Create an account' : 'Back to sign in'}
+            </button>
           </>
         )}
-
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>Work email</div>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 14 }}
-          placeholder="you@karibasolar.co.zm"
-        />
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#52685F', marginBottom: 5 }}>Password</div>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 18 }}
-          placeholder="••••••••"
-        />
-
-        {error && (
-          <div style={{ marginBottom: 14, padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>
-            {error}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ width: '100%', padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13.5, cursor: loading ? 'default' : 'pointer', marginBottom: 10, opacity: loading ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-        >
-          {loading && <Spinner size={14} color="#fff" />}
-          {loading ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
-        </button>
-        <button
-          type="button"
-          onClick={() => { setMode((m) => (m === 'signin' ? 'register' : 'signin')); setError(''); }}
-          style={{ width: '100%', padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
-        >
-          {mode === 'signin' ? 'Create an account' : 'Back to sign in'}
-        </button>
       </form>
     </div>
   );
