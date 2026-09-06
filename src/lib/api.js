@@ -739,6 +739,8 @@ const SCREEN_MODULES = {
   projects: ['projects'],
   workorders: ['workOrders'],
   nonconformities: ['nonConformities'],
+  commissioning: ['plants'],
+  handover: ['plants'],
   reports: ['reports'],
   portal: ['plants', 'workOrders'],
 };

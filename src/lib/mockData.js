@@ -15,6 +15,8 @@ export const navGroups = [
     items: [
       ['Work orders', 'workorders'],
       ['Non-conformities', 'nonconformities'],
+      ['Commissioning', 'commissioning'],
+      ['Handover', 'handover'],
     ],
   },
   { label: 'Insight', items: [['Reports', 'reports'], ['Customer portal', 'portal']] },
@@ -31,7 +33,8 @@ export const pageTitles = {
   projects: 'Projects',
   plants: 'Plants',
   workorders: 'Work orders',
-  commissioning: 'Commissioning & handover',
+  commissioning: 'Commissioning',
+  handover: 'Handover',
   nonconformities: 'Non-conformities',
   reports: 'Reports',
   portal: 'Customer portal',
