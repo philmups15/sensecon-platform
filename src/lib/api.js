@@ -227,6 +227,7 @@ export const getReportCatalogue = () => request('/api/reports/catalogue');
 
 // ---- Projects ----
 export const getProjects = () => request('/api/projects');
+export const getProjectById = (id) => request(`/api/projects/${id}`);
 export const getProject = (id) => request(`/api/projects/${id}`);
 export const createProject = (data) => request('/api/projects', { method: 'POST', body: data });
 export const updateProject = (id, data) => request(`/api/projects/${id}`, { method: 'PUT', body: data });
