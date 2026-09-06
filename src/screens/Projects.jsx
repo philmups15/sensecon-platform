@@ -5,6 +5,7 @@ import Surveys from './Surveys';
 import Design from './Design';
 import Bom from './Bom';
 import Plants from './Plants';
+import ExportButton from '../components/ExportButton';
 import {
   getProjects,
   getProjectById,
@@ -137,6 +138,7 @@ export default function Projects({ currentUser }) {
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [stageFilter, setStageFilter] = useState('all');
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -234,6 +236,11 @@ export default function Projects({ currentUser }) {
 
   // ============ LIST VIEW ============
   if (!detail) {
+    const stageTabs = [
+      ['all', `All (${projects.length})`],
+      ...STAGE_ENTRIES.map(([key, meta]) => [key, `${meta.label} (${projects.filter((p) => p.stageKey === key).length})`]),
+    ];
+    const visibleProjects = stageFilter === 'all' ? projects : projects.filter((p) => p.stageKey === stageFilter);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -242,18 +249,30 @@ export default function Projects({ currentUser }) {
             Show deactivated
           </label>
           <div style={{ flex: 1 }} />
+          <ExportButton filename="projects" sheet="Projects" rows={() => visibleProjects.map((p) => ({
+            Code: p.id, Name: p.name, Customer: p.customer, Stage: p.stage, 'Project manager': p.pm,
+            Budget: p.rawBudget, Actual: p.rawActual,
+            'Scheduled start': dateInput(p.scheduledStartDate), 'Scheduled end': dateInput(p.scheduledEndDate),
+            Status: p.isActive ? 'Active' : 'Inactive',
+          }))} />
           {canWrite && <button onClick={() => { setForm(EMPTY_FORM); setCreateError(''); setShowAddForm(true); }} style={primaryBtnStyle}>+ Add project</button>}
         </div>
 
         {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
         {projects.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No projects yet.</div>}
 
-        {projects.length > 0 && (
+        {projects.length > 0 && <TabStrip tabs={stageTabs} active={stageFilter} onChange={setStageFilter} />}
+
+        {projects.length > 0 && visibleProjects.length === 0 && (
+          <div style={{ padding: 20, color: '#78908A', fontSize: 13 }}>No projects in this stage.</div>
+        )}
+
+        {visibleProjects.length > 0 && (
           <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.1fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1' }}>
               <div>Project</div><div>Stage</div><div>PM</div><div>Budget</div><div>Actual</div><div>Actions</div>
             </div>
-            {projects.map((p) => (
+            {visibleProjects.map((p) => (
               <div key={p.entityId} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center', opacity: p.isActive ? 1 : 0.55 }}>
                 <div onClick={() => setSelectedId(p.entityId)} style={{ fontWeight: 600, color: '#12201F', cursor: 'pointer' }}>
                   {p.name}{!p.isActive && <span style={{ marginLeft: 8 }}><Chip label="Inactive" tone="slate" /></span>}
@@ -479,6 +498,12 @@ export default function Projects({ currentUser }) {
       {/* Tasks */}
       {tab === 'tasks' && (
       <Section>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+          <ExportButton filename={`${detail.id}-tasks`} sheet="Tasks" rows={() => (full?.tasks || []).map((t) => ({
+            Name: t.name, Owner: t.owner, 'Due date': t.dueDate ? t.dueDate.slice(0, 10) : '',
+            Status: (PROJECT_TASK_STATUS_META[t.status] || {}).label || t.status,
+          }))} />
+        </div>
         {!full ? <Spinner size={12} /> : (
           <>
             {(full.tasks || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No tasks yet.</div>}
@@ -522,6 +547,11 @@ export default function Projects({ currentUser }) {
       {/* Subcontractors */}
       {tab === 'subs' && (
       <Section>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+          <ExportButton filename={`${detail.id}-subcontractors`} sheet="Subcontractors" rows={() => (full?.subcontractors || []).map((s) => ({
+            Company: s.name, Scope: s.scope, Status: (SUBCONTRACTOR_STATUS_META[s.status] || {}).label || s.status,
+          }))} />
+        </div>
         {!full ? <Spinner size={12} /> : (
           <>
             {(full.subcontractors || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No subcontractors yet.</div>}
@@ -564,6 +594,13 @@ export default function Projects({ currentUser }) {
       {/* Risk register */}
       {tab === 'risk' && (
       <Section>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+          <ExportButton filename={`${detail.id}-risks`} sheet="Risks" rows={() => (full?.risks || []).map((r) => ({
+            Risk: r.description, Mitigation: r.mitigation,
+            Severity: (RISK_SEVERITY_META[r.severity] || {}).label || r.severity,
+            Status: (RISK_STATUS_META[r.status] || {}).label || r.status,
+          }))} />
+        </div>
         {!full ? <Spinner size={12} /> : (
           <>
             {(full.risks || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No risks logged yet.</div>}
@@ -611,6 +648,12 @@ export default function Projects({ currentUser }) {
       {/* Budget vs actual */}
       {tab === 'budget' && (
       <Section>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+          <ExportButton filename={`${detail.id}-budget`} sheet="Budget" rows={() => (full?.budgetLines || []).map((b) => ({
+            'Line item': b.label, Category: b.category ? (BOM_CATEGORY_META[b.category]?.label || b.category) : '',
+            Budget: b.budgetAmount, Actual: b.actualAmount, Variance: b.actualAmount - b.budgetAmount,
+          }))} />
+        </div>
         {!full ? <Spinner size={12} /> : (() => {
           const lines = full.budgetLines || [];
           const maxVal = Math.max(1, ...lines.map((b) => Math.max(b.budgetAmount, b.actualAmount)));

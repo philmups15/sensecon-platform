@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getNonConformities,
   createNonConformity,
@@ -107,8 +108,12 @@ export default function NonConformities({ currentUser }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', gap: 10 }}>
         <div style={{ flex: 1 }} />
+        <ExportButton filename="non-conformities" sheet="Non-conformities" rows={() => rows.map((r) => ({
+          Ref: r.id, Description: r.desc, Plant: r.plant || '', Project: projectFor(r.plantId) || '',
+          Status: r.status,
+        }))} />
         {canWrite && <button onClick={() => { setForm({ ...EMPTY_FORM, plantId: plants[0]?.id || '' }); setFormError(''); setShowAdd(true); }} style={primaryBtnStyle}>+ Log non-conformity</button>}
       </div>
 

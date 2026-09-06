@@ -8,6 +8,7 @@ import {
   PLANT_TYPE_META,
 } from '../../lib/api';
 import { primaryBtnStyle, secondaryBtnStyle, inputStyle } from './shared';
+import ExportButton from '../../components/ExportButton';
 
 const CATEGORIES = ['Dc', 'Ac', 'Monitoring', 'Safety'];
 const CATEGORY_LABEL = { Dc: 'DC', Ac: 'AC', Monitoring: 'Monitoring', Safety: 'Safety' };
@@ -58,8 +59,13 @@ export default function AdminCommissioningTemplates() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {error && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{error}</div>}
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', gap: 10 }}>
         <div style={{ flex: 1 }} />
+        <ExportButton filename="commissioning-test-templates" sheet="Templates" rows={() => rows.map((r) => ({
+          Category: CATEGORY_LABEL[r.category] || r.category, Test: r.testName,
+          'Applies to': r.appliesToTypes.length === 0 ? 'All types' : r.appliesToTypes.map((t) => PLANT_TYPE_META[t]?.label || t).join(', '),
+          Order: r.order, Active: r.isActive ? 'Yes' : 'No',
+        }))} />
         <button onClick={() => setDraft({ ...EMPTY, order: rows.length })} style={primaryBtnStyle}>+ Add test</button>
       </div>
 

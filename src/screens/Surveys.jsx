@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getSurveys,
   getSurveyById,
@@ -256,8 +257,12 @@ export default function Surveys({ currentUser, projectScopeId, projectName, onCh
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ flex: 1 }} />
+        <ExportButton filename="site-surveys" sheet="Surveys" rows={() => visibleSurveys.map((s) => ({
+          Ref: s.id, 'Plant / site': s.plant, Surveyor: s.surveyor || '', Date: s.rawDate ? s.rawDate.slice(0, 10) : '',
+          Status: s.status, 'Progress %': s.progress, Project: s.projectName || '',
+        }))} />
         {canWrite && <button onClick={openAddForm} style={primaryBtnStyle}>+ Add survey</button>}
       </div>
       {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
@@ -403,7 +408,10 @@ export default function Surveys({ currentUser, projectScopeId, projectName, onCh
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20, marginTop: 20 }}>
                 <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Measurements</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700 }}>Measurements</div>
+                    <ExportButton label="Excel" filename={`${detail.id}-measurements`} sheet="Measurements" rows={() => (full?.measurements || []).map((m) => ({ Field: m.field, Value: m.value }))} />
+                  </div>
                   {!full ? <Spinner size={12} /> : (full.measurements || []).map((m) => (
                     <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
                       <span style={{ color: '#52685F' }}>{m.field}</span>
@@ -420,7 +428,10 @@ export default function Surveys({ currentUser, projectScopeId, projectName, onCh
                   )}
                 </div>
                 <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Obstructions &amp; shading</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700 }}>Obstructions &amp; shading</div>
+                    <ExportButton label="Excel" filename={`${detail.id}-obstructions`} sheet="Obstructions" rows={() => (full?.obstructions || []).map((o) => ({ Obstruction: o.item, Impact: o.impact }))} />
+                  </div>
                   {!full ? <Spinner size={12} /> : (full.obstructions || []).map((ob) => (
                     <div key={ob.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
                       <div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import HandoverBundle from '../components/HandoverBundle';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getPlants,
   toPlantView,
@@ -219,6 +220,16 @@ export default function Commissioning({ currentUser, projectScopeId, view }) {
       {showTests && testsError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{testsError}</div>}
 
       {showTests && !plantId && <div style={{ padding: 20, color: '#78908A', fontSize: 13 }}>No plant selected — this project has no plant yet.</div>}
+
+      {showTests && plantId && tests.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <ExportButton filename={`${plant?.code || 'plant'}-commissioning`} sheet="Commissioning" rows={() => tests.map((t) => ({
+            Category: CATEGORY_TITLES[t.category] || t.category, Test: t.testName,
+            Result: (COMMISSIONING_RESULT_META[t.result] || {}).label || t.result,
+            Notes: t.notes || '', 'Recorded': t.recordedDate ? String(t.recordedDate).slice(0, 10) : '',
+          }))} />
+        </div>
+      )}
 
       {showTests && plantId && (testsLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A' }}><Spinner size={14} />Loading checklist…</div>

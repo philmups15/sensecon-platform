@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getDesigns,
   getDesignById,
@@ -198,8 +199,11 @@ export default function Design({ currentUser, projectScopeId, projectName, onCha
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ flex: 1 }} />
+        <ExportButton filename="designs" sheet="Designs" rows={() => visibleDesigns.map((d) => ({
+          Ref: d.id, Project: d.project, Revision: d.rev, Status: d.status, Survey: d.survey === '—' ? '' : d.survey,
+        }))} />
         {canWrite && <button onClick={openAddForm} style={primaryBtnStyle}>+ Add design</button>}
       </div>
 

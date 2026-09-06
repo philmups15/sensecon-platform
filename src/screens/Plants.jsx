@@ -3,6 +3,7 @@ import Chip from '../components/Chip';
 import HandoverBundle from '../components/HandoverBundle';
 import LifecycleTimeline from '../components/LifecycleTimeline';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getPlants,
   createPlant,
@@ -230,8 +231,14 @@ export default function Plants({ currentUser, projectScopeId, projectName, onCha
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ flex: 1 }} />
+        <ExportButton filename="plants" sheet="Plants" rows={() => visiblePlants.map((p) => ({
+          Code: p.code, Name: p.name, Stage: p.stageLabel, Type: p.typeLabel,
+          Capacity: p.capacity, Equipment: p.equip, 'Performance ratio': p.pr ?? '',
+          Health: p.health, Latitude: p.latitude ?? '', Longitude: p.longitude ?? '',
+          Project: p.projectName || '', Status: p.isActive ? 'Active' : 'Inactive',
+        }))} />
         {canWrite && <button onClick={openAddForm} style={primaryBtnStyle}>+ Add plant</button>}
       </div>
 
