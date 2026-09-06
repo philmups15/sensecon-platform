@@ -6,15 +6,19 @@ import {
   createBomItem,
   updateBomItem,
   deleteBomItem,
+  getBomCostVariance,
   toBomView,
   getPlants,
   toPlantView,
+  getProjects,
+  toProjectView,
   canAccess,
   BOM_STATUS_META,
+  BOM_CATEGORY_META,
 } from '../lib/api';
-import { variance } from '../lib/mockData';
 
 const STATUS_ENTRIES = Object.entries(BOM_STATUS_META);
+const CATEGORY_ENTRIES = Object.entries(BOM_CATEGORY_META);
 
 const linkBtnStyle = { padding: '3px 6px', border: 'none', background: 'transparent', color: '#1F6E72', fontSize: 11, fontWeight: 700, cursor: 'pointer' };
 const dangerBtnStyle = { ...linkBtnStyle, color: '#A6362E' };
@@ -23,24 +27,27 @@ const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px'
 const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '6px 8px', fontSize: 13, fontFamily: 'inherit' };
 const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
 
-const EMPTY_FORM = { component: '', quantity: '1', unitCost: '', supplier: '', status: 'Ordered', plantId: '' };
+const EMPTY_FORM = { component: '', category: 'Other', quantity: '1', unitCost: '', supplier: '', status: 'Ordered', plantId: '', projectId: '' };
+const money = (n) => `$${Number(n || 0).toLocaleString()}`;
 
 export default function Bom({ currentUser }) {
   const canWrite = canAccess(currentUser?.role, 'bomItems', 'write');
 
   const [rows, setRows] = useState([]);
   const [plants, setPlants] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [varianceProjectId, setVarianceProjectId] = useState('');
+  const [variance, setVariance] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({});
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [rowError, setRowError] = useState('');
 
   const [deletingId, setDeletingId] = useState(null);
-  const [deleteError, setDeleteError] = useState('');
-
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [creating, setCreating] = useState(false);
@@ -48,148 +55,135 @@ export default function Bom({ currentUser }) {
 
   const load = () => {
     setLoading(true);
-    Promise.all([getBomItems(), getPlants()])
-      .then(([bomDtos, plantDtos]) => {
+    Promise.all([getBomItems(), getPlants(), getProjects()])
+      .then(([bomDtos, plantDtos, projectDtos]) => {
         setRows(bomDtos.map(toBomView));
         setPlants(plantDtos.map(toPlantView));
+        const pv = projectDtos.map(toProjectView);
+        setProjects(pv);
+        setVarianceProjectId((prev) => prev || pv[0]?.entityId || '');
       })
       .catch((err) => setError(err.message || 'Failed to load BOM items.'))
       .finally(() => setLoading(false));
   };
-
   useEffect(load, []);
+
+  useEffect(() => {
+    if (!varianceProjectId) { setVariance([]); return; }
+    getBomCostVariance(varianceProjectId).then(setVariance).catch(() => setVariance([]));
+  }, [varianceProjectId, rows]);
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading bill of materials…</div>;
   if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
 
   const refresh = () => getBomItems().then((dtos) => setRows(dtos.map(toBomView)));
-
-  const openAddForm = () => {
-    setForm(EMPTY_FORM);
-    setCreateError('');
-    setShowAddForm(true);
-  };
+  const maxK = Math.max(1, ...variance.flatMap((v) => [v.budget, v.actual]));
 
   const submitAddForm = async (e) => {
     e.preventDefault();
-    if (!form.component.trim()) {
-      setCreateError('Component is required.');
-      return;
-    }
-    setCreating(true);
-    setCreateError('');
+    if (!form.component.trim()) { setCreateError('Component is required.'); return; }
+    setCreating(true); setCreateError('');
     try {
       await createBomItem({
-        component: form.component,
-        quantity: Number(form.quantity) || 1,
-        unitCost: Number(form.unitCost) || 0,
-        supplier: form.supplier,
-        status: form.status,
-        plantId: form.plantId || null,
+        component: form.component, category: form.category,
+        quantity: Number(form.quantity) || 1, unitCost: Number(form.unitCost) || 0,
+        supplier: form.supplier, status: form.status,
+        plantId: form.plantId || null, projectId: form.projectId || null,
       });
       await refresh();
-      setShowAddForm(false);
-    } catch (err) {
-      setCreateError(err.message || 'Failed to create BOM item.');
-    } finally {
-      setCreating(false);
-    }
+      setShowAddForm(false); setForm(EMPTY_FORM);
+    } catch (err) { setCreateError(err.message || 'Failed to create BOM item.'); }
+    finally { setCreating(false); }
   };
 
   const startEdit = (row) => {
     setEditingId(row.entityId);
     setDraft({
-      component: row.component,
-      quantity: String(row.qty),
-      unitCost: String(row.rawUnitCost),
-      supplier: row.supplier,
-      status: row.statusKey,
-      plantId: row.plantId || '',
+      component: row.component, category: row.category,
+      quantity: String(row.qty), unitCost: String(row.rawUnitCost),
+      supplier: row.supplier, status: row.statusKey,
+      plantId: row.plantId || '', projectId: row.projectId || '',
     });
-    setSaveError('');
+    setRowError('');
   };
-  const cancelEdit = () => setEditingId(null);
   const saveEdit = async (id) => {
-    setSaving(true);
-    setSaveError('');
+    setSaving(true); setRowError('');
     try {
       await updateBomItem(id, {
-        component: draft.component,
-        quantity: Number(draft.quantity) || 1,
-        unitCost: Number(draft.unitCost) || 0,
-        supplier: draft.supplier,
-        status: draft.status,
-        plantId: draft.plantId || null,
+        component: draft.component, category: draft.category,
+        quantity: Number(draft.quantity) || 1, unitCost: Number(draft.unitCost) || 0,
+        supplier: draft.supplier, status: draft.status,
+        plantId: draft.plantId || null, projectId: draft.projectId || null,
       });
       await refresh();
       setEditingId(null);
-    } catch (err) {
-      setSaveError(err.message || 'Failed to save changes.');
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setRowError(err.message || 'Failed to save.'); }
+    finally { setSaving(false); }
   };
 
   const removeItem = async (row) => {
-    if (!window.confirm(`Delete BOM line ${row.component}? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete BOM line ${row.component}?`)) return;
     setDeletingId(row.entityId);
-    setDeleteError('');
     try {
       await deleteBomItem(row.entityId);
       setRows((prev) => prev.filter((item) => item.entityId !== row.entityId));
-    } catch (err) {
-      setDeleteError(err.message || 'Failed to delete BOM item.');
-    } finally {
-      setDeletingId(null);
-    }
+    } catch (err) { setRowError(err.message || 'Failed to delete.'); }
+    finally { setDeletingId(null); }
   };
+
+  const cols = '1.7fr 1fr 0.5fr 0.8fr 1.1fr 1.1fr 1.2fr 0.9fr 0.9fr';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex' }}>
         <div style={{ flex: 1 }} />
-        {canWrite && <button onClick={openAddForm} style={primaryBtnStyle}>+ Add BOM item</button>}
+        {canWrite && <button onClick={() => { setForm({ ...EMPTY_FORM, projectId: projects[0]?.entityId || '' }); setCreateError(''); setShowAddForm(true); }} style={primaryBtnStyle}>+ Add BOM item</button>}
       </div>
+      {rowError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{rowError}</div>}
 
-      {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
-      {saveError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{saveError}</div>}
-
-      <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 0.6fr 0.9fr 1.2fr 1.3fr 1fr 1fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1' }}>
-          <div>Component</div><div>Qty</div><div>Unit cost</div><div>Supplier</div><div>Plant</div><div>Status</div><div>Actions</div>
+      <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1', minWidth: 900 }}>
+          <div>Component</div><div>Category</div><div>Qty</div><div>Unit cost</div><div>Supplier</div><div>Project</div><div>Plant</div><div>Status</div><div>Actions</div>
         </div>
         {rows.length === 0 && <div style={{ padding: 16, fontSize: 13, color: '#78908A' }}>No BOM lines yet.</div>}
         {rows.map((b) => {
           const editing = editingId === b.entityId;
           return (
-            <div key={b.entityId} style={{ display: 'grid', gridTemplateColumns: '1.8fr 0.6fr 0.9fr 1.2fr 1.3fr 1fr 1fr', padding: '10px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center' }}>
+            <div key={b.entityId} style={{ display: 'grid', gridTemplateColumns: cols, padding: '10px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center', minWidth: 900 }}>
               {editing ? (
                 <>
                   <input value={draft.component} onChange={(e) => setDraft((d) => ({ ...d, component: e.target.value }))} style={smallInputStyle} />
+                  <select value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))} style={smallInputStyle}>
+                    {CATEGORY_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+                  </select>
                   <input type="number" min="1" value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: e.target.value }))} style={smallInputStyle} />
                   <input type="number" min="0" step="0.01" value={draft.unitCost} onChange={(e) => setDraft((d) => ({ ...d, unitCost: e.target.value }))} style={smallInputStyle} />
                   <input value={draft.supplier} onChange={(e) => setDraft((d) => ({ ...d, supplier: e.target.value }))} style={smallInputStyle} />
+                  <select value={draft.projectId} onChange={(e) => setDraft((d) => ({ ...d, projectId: e.target.value }))} style={smallInputStyle}>
+                    <option value="">— None —</option>
+                    {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+                  </select>
                   <select value={draft.plantId} onChange={(e) => setDraft((d) => ({ ...d, plantId: e.target.value }))} style={smallInputStyle}>
                     <option value="">— None —</option>
                     {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                   <select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))} style={smallInputStyle}>
-                    {STATUS_ENTRIES.map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
+                    {STATUS_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
                   </select>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" onClick={cancelEdit} disabled={saving} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
-                    <button type="button" onClick={() => saveEdit(b.entityId)} disabled={saving} style={{ ...linkBtnStyle, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      {saving && <Spinner size={10} />}Save
-                    </button>
+                    <button type="button" onClick={() => setEditingId(null)} disabled={saving} style={{ ...linkBtnStyle, color: '#78908A' }}>Cancel</button>
+                    <button type="button" onClick={() => saveEdit(b.entityId)} disabled={saving} style={linkBtnStyle}>{saving ? '…' : 'Save'}</button>
                   </div>
                 </>
               ) : (
                 <>
                   <div style={{ fontWeight: 600, color: '#12201F' }}>{b.component}</div>
+                  <div style={{ color: '#52685F' }}>{b.categoryLabel}</div>
                   <div>{b.qty}</div>
                   <div>{b.unit}</div>
                   <div>{b.supplier || '—'}</div>
-                  <div style={{ color: b.plantName ? '#1F6E72' : '#78908A', fontWeight: b.plantName ? 600 : 400 }}>{b.plantName || '—'}</div>
+                  <div style={{ color: b.projectName ? '#1F6E72' : '#78908A' }}>{b.projectName || '—'}</div>
+                  <div style={{ color: b.plantName ? '#1F6E72' : '#78908A' }}>{b.plantName || '—'}</div>
                   <div><Chip label={b.status} tone={b.tone} /></div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     {canWrite && <button type="button" onClick={() => startEdit(b)} style={linkBtnStyle}>Edit</button>}
@@ -203,15 +197,23 @@ export default function Bom({ currentUser }) {
       </div>
 
       <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 18 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>Cost variance vs budget ($k)</div>
-        {variance.map((v, i) => (
-          <div key={i} style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ fontSize: 13.5, fontWeight: 700 }}>Cost variance vs budget</div>
+          <select value={varianceProjectId} onChange={(e) => setVarianceProjectId(e.target.value)} style={{ border: '1px solid #D7E4E1', borderRadius: 8, padding: '6px 10px', fontSize: 12.5, fontFamily: 'inherit' }}>
+            <option value="">Select a project…</option>
+            {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+          </select>
+        </div>
+        {variance.length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No BOM lines or budget lines for this project yet.</div>}
+        {variance.map((v) => (
+          <div key={v.category} style={{ marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#52685F', marginBottom: 4 }}>
-              <span>{v.label}</span>
-              <span>{v.actual}k / {v.budget}k budget</span>
+              <span>{BOM_CATEGORY_META[v.category]?.label || v.category}</span>
+              <span style={{ color: v.actual > v.budget && v.budget > 0 ? '#A6362E' : '#52685F' }}>{money(v.actual)} / {money(v.budget)} budget</span>
             </div>
             <div style={{ height: 8, background: '#E9F1EF', borderRadius: 999, position: 'relative' }}>
-              <div style={{ height: 8, width: `${v.actualPct}%`, background: '#1F6E72', borderRadius: 999 }} />
+              <div style={{ height: 8, width: `${Math.min(100, (v.budget / maxK) * 100)}%`, background: '#B7CCC7', borderRadius: 999, position: 'absolute' }} />
+              <div style={{ height: 8, width: `${Math.min(100, (v.actual / maxK) * 100)}%`, background: v.actual > v.budget && v.budget > 0 ? '#A6362E' : '#1F6E72', borderRadius: 999, position: 'absolute' }} />
             </div>
           </div>
         ))}
@@ -221,11 +223,21 @@ export default function Bom({ currentUser }) {
         <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 440, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}>
             <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Add BOM item</div>
-
             <div style={fieldLabelStyle}>Component *</div>
             <input value={form.component} onChange={(e) => setForm((f) => ({ ...f, component: e.target.value }))} required style={inputStyle} />
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <div style={fieldLabelStyle}>Category</div>
+                <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} style={inputStyle}>
+                  {CATEGORY_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>Status</div>
+                <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} style={inputStyle}>
+                  {STATUS_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
+                </select>
+              </div>
               <div>
                 <div style={fieldLabelStyle}>Quantity</div>
                 <input type="number" min="1" value={form.quantity} onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))} style={inputStyle} />
@@ -235,26 +247,22 @@ export default function Bom({ currentUser }) {
                 <input type="number" min="0" step="0.01" value={form.unitCost} onChange={(e) => setForm((f) => ({ ...f, unitCost: e.target.value }))} style={inputStyle} />
               </div>
             </div>
-
             <div style={fieldLabelStyle}>Supplier</div>
             <input value={form.supplier} onChange={(e) => setForm((f) => ({ ...f, supplier: e.target.value }))} style={inputStyle} />
-
+            <div style={fieldLabelStyle}>Project</div>
+            <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
+              <option value="">— None —</option>
+              {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+            </select>
             <div style={fieldLabelStyle}>Plant</div>
             <select value={form.plantId} onChange={(e) => setForm((f) => ({ ...f, plantId: e.target.value }))} style={inputStyle}>
               <option value="">— None —</option>
               {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-
-            <div style={fieldLabelStyle}>Status</div>
-            <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} style={inputStyle}>
-              {STATUS_ENTRIES.map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
-            </select>
-
             {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
-
-            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
-              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <button type="submit" disabled={creating} style={{ flex: 1, padding: 10, background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 {creating && <Spinner size={12} color="#fff" />}Add BOM item
               </button>
             </div>
