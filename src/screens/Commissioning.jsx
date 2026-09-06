@@ -55,9 +55,11 @@ function TestGroup({ title, tests, canWrite, onChange, savingKey }) {
   );
 }
 
-export default function Commissioning({ currentUser, projectScopeId }) {
+export default function Commissioning({ currentUser, projectScopeId, view }) {
   const canWrite = canAccess(currentUser?.role, 'plants', 'write');
   const scoped = !!projectScopeId;
+  const showTests = !view || view === 'tests';
+  const showHandover = !view || view === 'handover';
 
   const [plants, setPlants] = useState([]);
   const [plantId, setPlantId] = useState(null);
@@ -176,19 +178,20 @@ export default function Commissioning({ currentUser, projectScopeId }) {
         )}
       </div>
 
-      {testsError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{testsError}</div>}
+      {showTests && testsError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{testsError}</div>}
 
-      {testsLoading ? (
+      {showTests && (testsLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A' }}><Spinner size={14} />Loading checklist…</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
           {Object.entries(CATEGORY_TITLES).map(([cat, title]) => (
             <TestGroup key={cat} title={title} tests={tests.filter((t) => t.category === cat)} canWrite={canWrite} onChange={handleTestChange} savingKey={savingKey} />
           ))}
         </div>
-      )}
+      ))}
 
       {/* Handover */}
+      {showHandover && (<>
       <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700 }}>Handover</div>
@@ -265,6 +268,8 @@ export default function Commissioning({ currentUser, projectScopeId }) {
         canUpload={canWrite}
         emptyLabel="No handover documents uploaded yet."
       />
+      </>
+      )}
     </div>
   );
 }
