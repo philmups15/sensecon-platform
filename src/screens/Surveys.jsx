@@ -3,6 +3,7 @@ import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
 import {
   getSurveys,
+  getSurveyById,
   createSurvey,
   updateSurvey,
   deleteSurvey,
@@ -13,8 +14,10 @@ import {
   toPlantView,
   SURVEY_STATUS_META,
   canAccess,
+  addSurveyMeasurement, deleteSurveyMeasurement,
+  addSurveyObstruction, deleteSurveyObstruction,
+  uploadSurveyPhotos, deleteSurveyPhoto, surveyPhotoBlobUrl,
 } from '../lib/api';
-import { surveyPhotos, measurements, obstructions } from '../lib/mockData';
 
 const STATUS_ENTRIES = Object.entries(SURVEY_STATUS_META);
 
@@ -39,6 +42,39 @@ function todayInputValue() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function PhotoThumb({ surveyId, photo, canWrite, onDelete }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    let revoked = null;
+    surveyPhotoBlobUrl(surveyId, photo.id).then((u) => { revoked = u; setUrl(u); }).catch(() => {});
+    return () => { if (revoked) URL.revokeObjectURL(revoked); };
+  }, [surveyId, photo.id]);
+  return (
+    <div style={{ position: 'relative', aspectRatio: '1', background: '#F4F8F7', border: '1px solid #D7E4E1', borderRadius: 8, overflow: 'hidden' }}>
+      {url
+        ? <img src={url} alt={photo.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}><Spinner size={12} /></div>}
+      {photo.gps && <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, background: 'rgba(18,32,31,0.6)', color: '#fff', fontSize: 8.5, padding: '2px 4px', textAlign: 'center' }}>{photo.gps}</div>}
+      {canWrite && <button type="button" onClick={onDelete} title="Delete" style={{ position: 'absolute', top: 2, right: 2, border: 'none', background: 'rgba(18,32,31,0.6)', color: '#fff', borderRadius: 4, width: 16, height: 16, fontSize: 10, lineHeight: '16px', cursor: 'pointer', padding: 0 }}>×</button>}
+    </div>
+  );
+}
+
+function MiniAdd({ fields, onAdd }) {
+  const [v, setV] = useState(Object.fromEntries(fields.map((f) => [f.key, ''])));
+  const [busy, setBusy] = useState(false);
+  return (
+    <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+      {fields.map((f) => (
+        <input key={f.key} placeholder={f.label} value={v[f.key]} onChange={(e) => setV((s) => ({ ...s, [f.key]: e.target.value }))}
+          style={{ flex: 1, boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '6px 8px', fontSize: 12.5, fontFamily: 'inherit' }} />
+      ))}
+      <button type="button" disabled={busy} onClick={async () => { setBusy(true); try { await onAdd(v); setV(Object.fromEntries(fields.map((f) => [f.key, '']))); } finally { setBusy(false); } }}
+        style={{ border: 'none', background: 'transparent', color: '#1F6E72', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>{busy ? '…' : 'Add'}</button>
+    </div>
+  );
+}
+
 export default function Surveys({ currentUser }) {
   const canWrite = canAccess(currentUser?.role, 'surveys', 'write');
 
@@ -59,6 +95,9 @@ export default function Surveys({ currentUser }) {
 
   const [signingOff, setSigningOff] = useState(false);
   const [signOffError, setSignOffError] = useState('');
+
+  const [full, setFull] = useState(null); // GetSurveyById: measurements / obstructions / photos
+  const [childError, setChildError] = useState('');
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -81,10 +120,14 @@ export default function Surveys({ currentUser }) {
 
   useEffect(load, []);
 
+  const detail = surveys.find((s) => s.entityId === selectedId);
+
+  const loadFull = (id) => { if (id) getSurveyById(id).then(setFull).catch(() => setFull(null)); };
+  useEffect(() => { setFull(null); setChildError(''); if (detail) loadFull(detail.entityId); }, [detail?.entityId]);
+  const refreshFull = () => detail && loadFull(detail.entityId);
+
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading surveys…</div>;
   if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
-
-  const detail = surveys.find((s) => s.entityId === selectedId);
 
   const refresh = () => getSurveys().then((dtos) => setSurveys(dtos.map(toSurveyView)));
 
@@ -314,33 +357,69 @@ export default function Surveys({ currentUser }) {
                 </div>
               )}
 
-              <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 20, marginBottom: 8 }}>Photo capture</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 8 }}>
-                {surveyPhotos.map((p) => (
-                  <div key={p.id} style={{ aspectRatio: '1', background: '#F4F8F7', border: '1px dashed #D7E4E1', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, color: '#78908A', textAlign: 'center', padding: 4 }}>
-                    {p.label}
-                  </div>
-                ))}
+              {childError && <div style={{ marginTop: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{childError}</div>}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20, marginBottom: 8 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700 }}>Photo capture</div>
+                {canWrite && (
+                  <label style={{ ...linkBtnStyle, cursor: 'pointer' }}>
+                    + photos
+                    <input type="file" accept="image/*" multiple style={{ display: 'none' }}
+                      onChange={async (e) => {
+                        const f = Array.from(e.target.files || []); e.target.value = '';
+                        if (!f.length) return;
+                        const gps = window.prompt('GPS / location caption for these photos (optional):') || '';
+                        try { await uploadSurveyPhotos(detail.entityId, f, f[0].name.replace(/\.[^/.]+$/, ''), gps); refreshFull(); }
+                        catch (err) { setChildError(err.message || 'Photo upload failed.'); }
+                      }} />
+                  </label>
+                )}
               </div>
+              {!full ? <Spinner size={12} /> : (full.photos || []).length === 0 ? (
+                <div style={{ fontSize: 12, color: '#78908A' }}>No photos captured yet.</div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 8 }}>
+                  {full.photos.map((p) => (
+                    <PhotoThumb key={p.id} surveyId={detail.entityId} photo={p} canWrite={canWrite}
+                      onDelete={async () => { try { await deleteSurveyPhoto(detail.entityId, p.id); refreshFull(); } catch (err) { setChildError(err.message || 'Delete failed.'); } }} />
+                  ))}
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
                 <div>
                   <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Measurements</div>
-                  {measurements.map((m, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
+                  {!full ? <Spinner size={12} /> : (full.measurements || []).map((m) => (
+                    <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
                       <span style={{ color: '#52685F' }}>{m.field}</span>
-                      <span style={{ fontWeight: 600, color: '#12201F' }}>{m.value}</span>
+                      <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ fontWeight: 600, color: '#12201F' }}>{m.value}</span>
+                        {canWrite && <button type="button" onClick={async () => { try { await deleteSurveyMeasurement(detail.entityId, m.id); refreshFull(); } catch (err) { setChildError(err.message); } }} style={dangerBtnStyle}>×</button>}
+                      </span>
                     </div>
                   ))}
+                  {full && (full.measurements || []).length === 0 && <div style={{ fontSize: 12, color: '#78908A' }}>None yet.</div>}
+                  {canWrite && full && (
+                    <MiniAdd fields={[{ key: 'field', label: 'Field' }, { key: 'value', label: 'Value' }]}
+                      onAdd={async (v) => { if (!v.field.trim()) return; try { await addSurveyMeasurement(detail.entityId, { field: v.field, value: v.value }); refreshFull(); } catch (err) { setChildError(err.message); } }} />
+                  )}
                 </div>
                 <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Obstructions & shading</div>
-                  {obstructions.map((ob, i) => (
-                    <div key={i} style={{ padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
-                      <div style={{ fontWeight: 600, color: '#12201F' }}>{ob.item}</div>
-                      <div style={{ color: '#78908A' }}>{ob.impact}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8 }}>Obstructions &amp; shading</div>
+                  {!full ? <Spinner size={12} /> : (full.obstructions || []).map((ob) => (
+                    <div key={ob.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #E9F1EF', fontSize: 12.5 }}>
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#12201F' }}>{ob.item}</div>
+                        <div style={{ color: '#78908A' }}>{ob.impact}</div>
+                      </div>
+                      {canWrite && <button type="button" onClick={async () => { try { await deleteSurveyObstruction(detail.entityId, ob.id); refreshFull(); } catch (err) { setChildError(err.message); } }} style={dangerBtnStyle}>×</button>}
                     </div>
                   ))}
+                  {full && (full.obstructions || []).length === 0 && <div style={{ fontSize: 12, color: '#78908A' }}>None yet.</div>}
+                  {canWrite && full && (
+                    <MiniAdd fields={[{ key: 'item', label: 'Obstruction' }, { key: 'impact', label: 'Impact' }]}
+                      onAdd={async (v) => { if (!v.item.trim()) return; try { await addSurveyObstruction(detail.entityId, { item: v.item, impact: v.impact }); refreshFull(); } catch (err) { setChildError(err.message); } }} />
+                  )}
                 </div>
               </div>
 

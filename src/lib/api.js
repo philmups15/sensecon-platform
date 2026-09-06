@@ -252,6 +252,7 @@ export const convertOpportunityToProject = (id) =>
 
 // ---- Surveys ----
 export const getSurveys = () => request('/api/surveys');
+export const getSurveyById = (id) => request(`/api/surveys/${id}`);
 export const getSurvey = (id) => request(`/api/surveys/${id}`);
 export const createSurvey = (data) => request('/api/surveys', { method: 'POST', body: data });
 export const updateSurvey = (id, data) => request(`/api/surveys/${id}`, { method: 'PUT', body: data });
@@ -259,6 +260,7 @@ export const deleteSurvey = (id) => request(`/api/surveys/${id}`, { method: 'DEL
 
 // ---- Designs ----
 export const getDesigns = () => request('/api/designs');
+export const getDesignById = (id) => request(`/api/designs/${id}`);
 export const getDesign = (id) => request(`/api/designs/${id}`);
 export const createDesign = (data) => request('/api/designs', { method: 'POST', body: data });
 export const updateDesign = (id, data) => request(`/api/designs/${id}`, { method: 'PUT', body: data });
