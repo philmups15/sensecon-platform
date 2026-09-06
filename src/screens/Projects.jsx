@@ -3,6 +3,7 @@ import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
 import {
   getProjects,
+  getProjectById,
   createProject,
   updateProject,
   deleteProject,
@@ -15,10 +16,22 @@ import {
   STAGE_META,
   SURVEY_STATUS_META,
   canAccess,
+  projectMilestones, projectTasks, projectSubcontractors, projectRisks, projectBudgetLines,
+  MILESTONE_STATE_META, PROJECT_TASK_STATUS_META, SUBCONTRACTOR_STATUS_META,
+  RISK_SEVERITY_META, RISK_STATUS_META, BOM_CATEGORY_META,
 } from '../lib/api';
-import { projectTabsList, milestones, tasks, subs, risks, budgetLines } from '../lib/mockData';
 
 const STAGE_ENTRIES = Object.entries(STAGE_META);
+const PROJECT_TABS = [
+  ['milestones', 'Milestones'],
+  ['tasks', 'Tasks'],
+  ['subs', 'Subcontractors'],
+  ['budget', 'Budget vs actual'],
+  ['risk', 'Risk register'],
+];
+const MILESTONE_CYCLE = { Upcoming: 'Current', Current: 'Done', Done: 'Upcoming' };
+const BOM_CATEGORY_ENTRIES = Object.entries(BOM_CATEGORY_META);
+const money = (n) => `$${Number(n || 0).toLocaleString()}`;
 
 const linkBtnStyle = {
   padding: '3px 6px',
@@ -36,12 +49,49 @@ const cardStyle = { background: '#FFFFFF', border: '1px solid #D7E4E1', borderRa
 const cardHeaderStyle = { fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A' };
 const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: 'pointer' };
 const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
+const smallInputStyle_ = { boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '5px 7px', fontSize: 12, fontFamily: 'inherit' };
 
 const EMPTY_FORM = { name: '', customer: '', stage: 'DesignSurvey', projectManager: '', budget: '', actual: '' };
 const EMPTY_SURVEY_FORM = { plantName: '', surveyor: '', date: '', status: 'Scheduled', plantId: '' };
 
 function todayInputValue() {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Generic inline add-row: `fields` is [{key,label,type?,options?,default?,flex?}]
+function InlineAdd({ fields, onAdd, label = 'Add' }) {
+  const init = () => Object.fromEntries(fields.map((f) => [f.key, f.default ?? '']));
+  const [v, setV] = useState(init);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  return (
+    <div style={{ borderTop: '1px dashed #D7E4E1', paddingTop: 10, marginTop: 10 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        {fields.map((f) => f.options ? (
+          <select key={f.key} value={v[f.key]} onChange={(e) => setV((s) => ({ ...s, [f.key]: e.target.value }))}
+            style={{ flex: f.flex || 1, minWidth: 110, boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13, fontFamily: 'inherit' }}>
+            {f.options.map(([ok, ol]) => <option key={ok} value={ok}>{ol}</option>)}
+          </select>
+        ) : (
+          <input key={f.key} type={f.type || 'text'} placeholder={f.label} value={v[f.key]}
+            step={f.type === 'number' ? 'any' : undefined}
+            onChange={(e) => setV((s) => ({ ...s, [f.key]: e.target.value }))}
+            style={{ flex: f.flex || 1, minWidth: 110, boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13, fontFamily: 'inherit' }} />
+        ))}
+        <button type="button" disabled={busy}
+          onClick={async () => {
+            setBusy(true); setErr('');
+            try { await onAdd(v); setV(init()); }
+            catch (e) { setErr(e.message || 'Failed.'); }
+            finally { setBusy(false); }
+          }}
+          style={{ border: 'none', background: '#1F6E72', color: '#fff', borderRadius: 6, padding: '7px 14px', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+          {busy ? '…' : label}
+        </button>
+      </div>
+      {err && <div style={{ marginTop: 6, color: '#A6362E', fontSize: 11.5 }}>{err}</div>}
+    </div>
+  );
 }
 
 export default function Projects({ currentUser }) {
@@ -54,7 +104,10 @@ export default function Projects({ currentUser }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
-  const [tab, setTab] = useState('tasks');
+  const [tab, setTab] = useState('milestones');
+  const [full, setFull] = useState(null); // GetProjectById: milestones/tasks/subs/risks/budgetLines
+  const [childError, setChildError] = useState('');
+  const [childBusy, setChildBusy] = useState(false);
 
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState('');
@@ -92,10 +145,22 @@ export default function Projects({ currentUser }) {
 
   const refreshSurveys = () => getSurveys().then((dtos) => setSurveys(dtos.map(toSurveyView)));
 
+  const detail = projects.find((p) => p.id === selectedId) || projects.find((p) => p.entityId === selectedId);
+
+  const loadFull = (id) => { if (id) getProjectById(id).then(setFull).catch(() => setFull(null)); };
+  useEffect(() => { setFull(null); setChildError(''); if (detail) loadFull(detail.entityId); }, [detail?.entityId]);
+  const refreshFull = () => detail && loadFull(detail.entityId);
+
+  // Run a child mutation, then refresh the embedded collections.
+  const childAction = async (fn) => {
+    setChildBusy(true); setChildError('');
+    try { await fn(); await loadFull(detail.entityId); }
+    catch (err) { setChildError(err.message || 'Action failed.'); }
+    finally { setChildBusy(false); }
+  };
+
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading projects…</div>;
   if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
-
-  const detail = projects.find((p) => p.id === selectedId) || projects.find((p) => p.entityId === selectedId);
 
   const openAddForm = () => {
     setForm(EMPTY_FORM);
@@ -378,67 +443,232 @@ export default function Projects({ currentUser }) {
 
       {detail && (
         <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', margin: '4px 0 16px' }}>
-            {milestones.map((m, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-                <div style={{ width: 20, height: 20, borderRadius: 999, background: m.bg, border: `2px solid ${m.color}` }} />
-                <div style={{ fontSize: 11, fontWeight: 600, marginTop: 6, color: '#52685F', textAlign: 'center' }}>{m.label}</div>
-              </div>
-            ))}
-          </div>
+          {/* Milestone timeline */}
+          {full && (full.milestones || []).length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'flex-start', margin: '4px 0 16px' }}>
+              {[...full.milestones].sort((a, b) => a.order - b.order).map((m) => {
+                const meta = MILESTONE_STATE_META[m.state] || MILESTONE_STATE_META.Upcoming;
+                const bg = m.state === 'Done' ? '#1F6E72' : m.state === 'Current' ? '#8FC7C0' : '#E9F1EF';
+                return (
+                  <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                    <div title={meta.label} style={{ width: 20, height: 20, borderRadius: 999, background: bg, border: '2px solid #1F6E72' }} />
+                    <div style={{ fontSize: 11, fontWeight: 600, marginTop: 6, color: '#52685F', textAlign: 'center' }}>{m.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #D7E4E1', marginBottom: 14 }}>
-            {projectTabsList.map(([key, label]) => {
+            {PROJECT_TABS.map(([key, label]) => {
               const active = tab === key;
               const color = active ? '#12484B' : '#78908A';
               return (
-                <div key={key} onClick={() => setTab(key)} style={{ padding: '9px 12px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color, borderBottom: `2px solid ${color}` }}>
+                <div key={key} onClick={() => setTab(key)} style={{ padding: '9px 12px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color, borderBottom: `2px solid ${active ? color : 'transparent'}` }}>
                   {label}
                 </div>
               );
             })}
           </div>
 
-          {tab === 'tasks' && tasks.map((tk, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
+          {childError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{childError}</div>}
+          {!full && <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: '#78908A', padding: '10px 0' }}><Spinner size={12} />Loading…</div>}
+
+          {full && tab === 'milestones' && (
+            <div>
+              {(full.milestones || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No milestones yet.</div>}
+              {[...full.milestones].sort((a, b) => a.order - b.order).map((m) => {
+                const meta = MILESTONE_STATE_META[m.state] || MILESTONE_STATE_META.Upcoming;
+                return (
+                  <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
+                    <div><span style={{ fontWeight: 600 }}>{m.label}</span> <span style={{ color: '#78908A', fontSize: 11.5 }}>#{m.order}</span></div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <button type="button" disabled={!canWrite || childBusy}
+                        onClick={() => childAction(() => projectMilestones.update(detail.entityId, m.id, { label: m.label, state: MILESTONE_CYCLE[m.state], order: m.order }))}
+                        style={{ border: 'none', background: 'transparent', cursor: canWrite ? 'pointer' : 'default', padding: 0 }}>
+                        <Chip label={meta.label} tone={meta.tone} />
+                      </button>
+                      {canWrite && <button type="button" onClick={() => childAction(() => projectMilestones.remove(detail.entityId, m.id))} style={dangerBtnStyle}>Delete</button>}
+                    </div>
+                  </div>
+                );
+              })}
+              {canWrite && (
+                <InlineAdd
+                  fields={[
+                    { key: 'label', label: 'Milestone', flex: 2 },
+                    { key: 'order', label: 'Order', type: 'number', default: String((full.milestones || []).length), flex: 0.6 },
+                    { key: 'state', label: 'State', options: Object.entries(MILESTONE_STATE_META).map(([k, v]) => [k, v.label]), default: 'Upcoming' },
+                  ]}
+                  onAdd={(v) => v.label.trim() && childAction(() => projectMilestones.add(detail.entityId, { label: v.label, state: v.state, order: Number(v.order) || 0 }))}
+                />
+              )}
+            </div>
+          )}
+
+          {full && tab === 'tasks' && (
+            <div>
+              {(full.tasks || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No tasks yet.</div>}
+              {(full.tasks || []).map((tk) => {
+                const meta = PROJECT_TASK_STATUS_META[tk.status] || PROJECT_TASK_STATUS_META.NotStarted;
+                return (
+                  <div key={tk.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{tk.name}</div>
+                      <div style={{ fontSize: 11.5, color: '#78908A' }}>{tk.owner || '—'}{tk.dueDate ? ` · due ${tk.dueDate.slice(0, 10)}` : ''}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      {canWrite ? (
+                        <select value={tk.status} disabled={childBusy}
+                          onChange={(e) => childAction(() => projectTasks.update(detail.entityId, tk.id, { name: tk.name, owner: tk.owner, dueDate: tk.dueDate, status: e.target.value }))}
+                          style={smallInputStyle_}>
+                          {Object.entries(PROJECT_TASK_STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                      ) : <Chip label={meta.label} tone={meta.tone} />}
+                      {canWrite && <button type="button" onClick={() => childAction(() => projectTasks.remove(detail.entityId, tk.id))} style={dangerBtnStyle}>Delete</button>}
+                    </div>
+                  </div>
+                );
+              })}
+              {canWrite && (
+                <InlineAdd
+                  fields={[
+                    { key: 'name', label: 'Task', flex: 2 },
+                    { key: 'owner', label: 'Owner' },
+                    { key: 'dueDate', label: 'Due', type: 'date', flex: 0.9 },
+                    { key: 'status', label: 'Status', options: Object.entries(PROJECT_TASK_STATUS_META).map(([k, v]) => [k, v.label]), default: 'NotStarted' },
+                  ]}
+                  onAdd={(v) => v.name.trim() && childAction(() => projectTasks.add(detail.entityId, { name: v.name, owner: v.owner, dueDate: v.dueDate ? new Date(v.dueDate).toISOString() : null, status: v.status }))}
+                />
+              )}
+            </div>
+          )}
+
+          {full && tab === 'subs' && (
+            <div>
+              {(full.subcontractors || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No subcontractors yet.</div>}
+              {(full.subcontractors || []).map((sb) => {
+                const meta = SUBCONTRACTOR_STATUS_META[sb.status] || SUBCONTRACTOR_STATUS_META.Active;
+                return (
+                  <div key={sb.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{sb.name}</div>
+                      <div style={{ fontSize: 11.5, color: '#78908A' }}>{sb.scope}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      {canWrite ? (
+                        <select value={sb.status} disabled={childBusy}
+                          onChange={(e) => childAction(() => projectSubcontractors.update(detail.entityId, sb.id, { name: sb.name, scope: sb.scope, status: e.target.value }))}
+                          style={smallInputStyle_}>
+                          {Object.entries(SUBCONTRACTOR_STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                        </select>
+                      ) : <Chip label={meta.label} tone={meta.tone} />}
+                      {canWrite && <button type="button" onClick={() => childAction(() => projectSubcontractors.remove(detail.entityId, sb.id))} style={dangerBtnStyle}>Delete</button>}
+                    </div>
+                  </div>
+                );
+              })}
+              {canWrite && (
+                <InlineAdd
+                  fields={[
+                    { key: 'name', label: 'Company', flex: 1.4 },
+                    { key: 'scope', label: 'Scope', flex: 1.6 },
+                    { key: 'status', label: 'Status', options: Object.entries(SUBCONTRACTOR_STATUS_META).map(([k, v]) => [k, v.label]), default: 'Active' },
+                  ]}
+                  onAdd={(v) => v.name.trim() && childAction(() => projectSubcontractors.add(detail.entityId, { name: v.name, scope: v.scope, status: v.status }))}
+                />
+              )}
+            </div>
+          )}
+
+          {full && tab === 'budget' && (() => {
+            const lines = full.budgetLines || [];
+            const maxVal = Math.max(1, ...lines.map((b) => Math.max(b.budgetAmount, b.actualAmount)));
+            const totBudget = lines.reduce((s, b) => s + b.budgetAmount, 0);
+            const totActual = lines.reduce((s, b) => s + b.actualAmount, 0);
+            return (
               <div>
-                <div style={{ fontWeight: 600 }}>{tk.name}</div>
-                <div style={{ fontSize: 11.5, color: '#78908A' }}>{tk.owner} · due {tk.due}</div>
+                {lines.length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No budget lines yet.</div>}
+                {lines.map((bl) => {
+                  const over = bl.actualAmount > bl.budgetAmount;
+                  return (
+                    <div key={bl.id} style={{ marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#52685F', marginBottom: 4 }}>
+                        <span>{bl.label}{bl.category ? ` · ${BOM_CATEGORY_META[bl.category]?.label || bl.category}` : ''}</span>
+                        <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                          <span style={{ color: over ? '#A6362E' : '#52685F', fontWeight: 600 }}>{money(bl.actualAmount)} / {money(bl.budgetAmount)}</span>
+                          {canWrite && <button type="button" onClick={() => childAction(() => projectBudgetLines.remove(detail.entityId, bl.id))} style={dangerBtnStyle}>×</button>}
+                        </span>
+                      </div>
+                      <div style={{ position: 'relative', height: 9, background: '#E9F1EF', borderRadius: 999 }}>
+                        <div style={{ position: 'absolute', inset: 0, width: `${(bl.budgetAmount / maxVal) * 100}%`, background: '#C9DAD6', borderRadius: 999 }} />
+                        <div style={{ position: 'absolute', top: 0, height: 9, width: `${(bl.actualAmount / maxVal) * 100}%`, background: over ? '#A6362E' : '#1F6E72', borderRadius: 999 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+                {lines.length > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 700, marginTop: 8, paddingTop: 8, borderTop: '1px solid #D7E4E1' }}>
+                    <span>Total</span>
+                    <span style={{ color: totActual > totBudget ? '#A6362E' : '#12201F' }}>{money(totActual)} / {money(totBudget)}</span>
+                  </div>
+                )}
+                {canWrite && (
+                  <InlineAdd
+                    fields={[
+                      { key: 'label', label: 'Line item', flex: 1.6 },
+                      { key: 'budgetAmount', label: 'Budget', type: 'number', flex: 0.9 },
+                      { key: 'actualAmount', label: 'Actual', type: 'number', flex: 0.9 },
+                      { key: 'category', label: 'Category', options: [['', '— Category —'], ...BOM_CATEGORY_ENTRIES.map(([k, v]) => [k, v.label])], default: '' },
+                    ]}
+                    onAdd={(v) => v.label.trim() && childAction(() => projectBudgetLines.add(detail.entityId, { label: v.label, budgetAmount: Number(v.budgetAmount) || 0, actualAmount: Number(v.actualAmount) || 0, category: v.category || null }))}
+                  />
+                )}
               </div>
-              <Chip label={tk.status} tone={tk.tone} />
-            </div>
-          ))}
+            );
+          })()}
 
-          {tab === 'subs' && subs.map((sb, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
-              <div>
-                <div style={{ fontWeight: 600 }}>{sb.name}</div>
-                <div style={{ fontSize: 11.5, color: '#78908A' }}>{sb.scope}</div>
-              </div>
-              <Chip label={sb.status} tone={sb.tone} />
+          {full && tab === 'risk' && (
+            <div>
+              {(full.risks || []).length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No risks logged yet.</div>}
+              {(full.risks || []).map((rk) => {
+                const sev = RISK_SEVERITY_META[rk.severity] || RISK_SEVERITY_META.Low;
+                const st = RISK_STATUS_META[rk.status] || RISK_STATUS_META.Open;
+                return (
+                  <div key={rk.id} style={{ padding: '10px 0', borderBottom: '1px solid #E9F1EF' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                      <div style={{ fontWeight: 600, fontSize: 13, flex: 1 }}>{rk.description}</div>
+                      {canWrite ? (
+                        <>
+                          <select value={rk.severity} disabled={childBusy} onChange={(e) => childAction(() => projectRisks.update(detail.entityId, rk.id, { description: rk.description, severity: e.target.value, mitigation: rk.mitigation, status: rk.status }))} style={smallInputStyle_}>
+                            {Object.entries(RISK_SEVERITY_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                          </select>
+                          <select value={rk.status} disabled={childBusy} onChange={(e) => childAction(() => projectRisks.update(detail.entityId, rk.id, { description: rk.description, severity: rk.severity, mitigation: rk.mitigation, status: e.target.value }))} style={smallInputStyle_}>
+                            {Object.entries(RISK_STATUS_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                          </select>
+                          <button type="button" onClick={() => childAction(() => projectRisks.remove(detail.entityId, rk.id))} style={dangerBtnStyle}>Delete</button>
+                        </>
+                      ) : (
+                        <><Chip label={sev.label} tone={sev.tone} /><Chip label={st.label} tone={st.tone} /></>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#78908A', marginTop: 3 }}>{rk.mitigation}</div>
+                  </div>
+                );
+              })}
+              {canWrite && (
+                <InlineAdd
+                  fields={[
+                    { key: 'description', label: 'Risk', flex: 1.8 },
+                    { key: 'mitigation', label: 'Mitigation', flex: 1.8 },
+                    { key: 'severity', label: 'Severity', options: Object.entries(RISK_SEVERITY_META).map(([k, v]) => [k, v.label]), default: 'Medium' },
+                    { key: 'status', label: 'Status', options: Object.entries(RISK_STATUS_META).map(([k, v]) => [k, v.label]), default: 'Open' },
+                  ]}
+                  onAdd={(v) => v.description.trim() && childAction(() => projectRisks.add(detail.entityId, { description: v.description, severity: v.severity, mitigation: v.mitigation, status: v.status }))}
+                />
+              )}
             </div>
-          ))}
-
-          {tab === 'budget' && budgetLines.map((bl, i) => (
-            <div key={i} style={{ marginBottom: 10 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#52685F', marginBottom: 4 }}>
-                <span>{bl.label}</span>
-                <span>${bl.actual} / ${bl.budget}</span>
-              </div>
-              <div style={{ height: 7, background: '#E9F1EF', borderRadius: 999 }}>
-                <div style={{ height: 7, width: '70%', background: '#1F6E72', borderRadius: 999 }} />
-              </div>
-            </div>
-          ))}
-
-          {tab === 'risk' && risks.map((rk, i) => (
-            <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #E9F1EF' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontWeight: 600, fontSize: 13 }}>{rk.risk}</div>
-                <Chip label={rk.severity} tone={rk.tone} />
-              </div>
-              <div style={{ fontSize: 11.5, color: '#78908A', marginTop: 3 }}>{rk.mitigation}</div>
-            </div>
-          ))}
+          )}
         </div>
       )}
 

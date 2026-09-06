@@ -11,6 +11,7 @@ import Projects from './screens/Projects';
 import Plants from './screens/Plants';
 import WorkOrders from './screens/WorkOrders';
 import Commissioning from './screens/Commissioning';
+import NonConformities from './screens/NonConformities';
 import Reports from './screens/Reports';
 import Portal from './screens/Portal';
 import Admin from './screens/Admin';
@@ -30,6 +31,7 @@ const SCREENS = {
   plants: Plants,
   workorders: WorkOrders,
   commissioning: Commissioning,
+  nonconformities: NonConformities,
   reports: Reports,
   portal: Portal,
   admin: Admin,
