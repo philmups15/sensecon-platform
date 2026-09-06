@@ -10,7 +10,7 @@ import {
   getProjectById,
   createProject,
   updateProject,
-  deleteProject,
+  setProjectActive,
   toProjectView,
   STAGE_META,
   canAccess,
@@ -32,7 +32,10 @@ const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#f
 const smallInputStyle = { width: '100%', boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '7px 9px', fontSize: 13.5, fontFamily: 'inherit' };
 const smallInputStyle_ = { boxSizing: 'border-box', border: '1px solid #D7E4E1', borderRadius: 6, padding: '5px 7px', fontSize: 12, fontFamily: 'inherit' };
 
-const EMPTY_FORM = { name: '', customer: '', stage: 'DesignSurvey', projectManager: '', budget: '', actual: '' };
+const EMPTY_FORM = { name: '', customer: '', stage: 'DesignSurvey', projectManager: '', budget: '', actual: '', scheduledStartDate: '', scheduledEndDate: '' };
+const isoOrNull = (d) => (d ? new Date(d).toISOString() : null);
+const dateInput = (d) => (d ? String(d).slice(0, 10) : '');
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
 // [tabKey, label, plantsOnly]
 const TAB_DEFS = [
@@ -133,6 +136,7 @@ export default function Projects({ currentUser }) {
 
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -141,12 +145,12 @@ export default function Projects({ currentUser }) {
 
   const load = () => {
     setLoading(true);
-    getProjects()
+    getProjects(showInactive)
       .then((dtos) => setProjects(dtos.map(toProjectView)))
       .catch((err) => setError(err.message || 'Failed to load projects.'))
       .finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  useEffect(load, [showInactive]);
 
   const detail = projects.find((p) => p.entityId === selectedId);
 
@@ -176,8 +180,10 @@ export default function Projects({ currentUser }) {
         name: form.name, customer: form.customer, stage: form.stage,
         projectManager: form.projectManager,
         budget: Number(form.budget) || 0, actual: Number(form.actual) || 0,
+        scheduledStartDate: isoOrNull(form.scheduledStartDate),
+        scheduledEndDate: isoOrNull(form.scheduledEndDate),
       });
-      const views = (await getProjects()).map(toProjectView);
+      const views = (await getProjects(showInactive)).map(toProjectView);
       setProjects(views);
       setSelectedId((views.find((p) => p.name === form.name) || views[0])?.entityId ?? null);
       setShowAddForm(false); setForm(EMPTY_FORM);
@@ -190,6 +196,8 @@ export default function Projects({ currentUser }) {
       name: p.name, customer: p.customer, stage: p.stageKey, projectManager: p.pm,
       budget: p.rawBudget != null ? String(p.rawBudget) : '',
       actual: p.rawActual != null ? String(p.rawActual) : '',
+      scheduledStartDate: dateInput(p.scheduledStartDate),
+      scheduledEndDate: dateInput(p.scheduledEndDate),
     });
     setCoreError(''); setEditingCore(true);
   };
@@ -201,21 +209,26 @@ export default function Projects({ currentUser }) {
         code: detail.id, name: coreDraft.name, customer: coreDraft.customer,
         stage: coreDraft.stage, projectManager: coreDraft.projectManager,
         budget: Number(coreDraft.budget) || 0, actual: Number(coreDraft.actual) || 0,
+        scheduledStartDate: isoOrNull(coreDraft.scheduledStartDate),
+        scheduledEndDate: isoOrNull(coreDraft.scheduledEndDate),
       });
-      setProjects((await getProjects()).map(toProjectView));
+      setProjects((await getProjects(showInactive)).map(toProjectView));
       setEditingCore(false);
     } catch (err) { setCoreError(err.message || 'Failed to save changes.'); }
     finally { setSavingCore(false); }
   };
 
-  const removeProject = async (p) => {
-    if (!window.confirm(`Delete project ${p.name}? This cannot be undone.`)) return;
+  // Deactivate (cascades to plants) / reactivate — no hard delete.
+  const toggleActive = async (p, active) => {
+    if (active === false && !window.confirm(`Deactivate project "${p.name}"? Its plants will be deactivated too.`)) return;
     setDeletingId(p.entityId); setDeleteError('');
     try {
-      await deleteProject(p.entityId);
-      setProjects((prev) => prev.filter((item) => item.entityId !== p.entityId));
-      if (selectedId === p.entityId) setSelectedId(null);
-    } catch (err) { setDeleteError(err.message || 'Failed to delete project.'); }
+      await setProjectActive(p.entityId, active);
+      const views = (await getProjects(showInactive)).map(toProjectView);
+      setProjects(views);
+      bump(); // cascade touched the plants — remount the embedded sections
+      if (!active && !showInactive && selectedId === p.entityId) setSelectedId(null);
+    } catch (err) { setDeleteError(err.message || 'Failed to update project.'); }
     finally { setDeletingId(null); }
   };
 
@@ -223,7 +236,11 @@ export default function Projects({ currentUser }) {
   if (!detail) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#52685F', cursor: 'pointer' }}>
+            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+            Show deactivated
+          </label>
           <div style={{ flex: 1 }} />
           {canWrite && <button onClick={() => { setForm(EMPTY_FORM); setCreateError(''); setShowAddForm(true); }} style={primaryBtnStyle}>+ Add project</button>}
         </div>
@@ -237,13 +254,19 @@ export default function Projects({ currentUser }) {
               <div>Project</div><div>Stage</div><div>PM</div><div>Budget</div><div>Actual</div><div>Actions</div>
             </div>
             {projects.map((p) => (
-              <div key={p.entityId} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center' }}>
-                <div onClick={() => setSelectedId(p.entityId)} style={{ fontWeight: 600, color: '#12201F', cursor: 'pointer' }}>{p.name}</div>
+              <div key={p.entityId} style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr 1fr 1fr 1fr 1.1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center', opacity: p.isActive ? 1 : 0.55 }}>
+                <div onClick={() => setSelectedId(p.entityId)} style={{ fontWeight: 600, color: '#12201F', cursor: 'pointer' }}>
+                  {p.name}{!p.isActive && <span style={{ marginLeft: 8 }}><Chip label="Inactive" tone="slate" /></span>}
+                </div>
                 <div><Chip label={p.stage} tone={p.tone} /></div>
                 <div>{p.pm || '—'}</div><div>{p.budget}</div><div>{p.actual}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <button type="button" onClick={() => setSelectedId(p.entityId)} style={linkBtnStyle}>Open</button>
-                  {canWrite && (deletingId === p.entityId ? <Spinner size={12} /> : <button type="button" onClick={() => removeProject(p)} style={dangerBtnStyle}>Delete</button>)}
+                  {canWrite && (deletingId === p.entityId ? <Spinner size={12} /> : (
+                    <button type="button" onClick={() => toggleActive(p, !p.isActive)} style={p.isActive ? dangerBtnStyle : { ...linkBtnStyle, color: '#1C8A4E' }}>
+                      {p.isActive ? 'Deactivate' : 'Reactivate'}
+                    </button>
+                  ))}
                 </div>
               </div>
             ))}
@@ -280,6 +303,16 @@ export default function Projects({ currentUser }) {
                   <input type="number" min="0" step="any" value={form.actual} onChange={(e) => setForm((f) => ({ ...f, actual: e.target.value }))} style={inputStyle} />
                 </div>
               </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <div style={fieldLabelStyle}>Scheduled start</div>
+                  <input type="date" value={form.scheduledStartDate} onChange={(e) => setForm((f) => ({ ...f, scheduledStartDate: e.target.value }))} style={inputStyle} />
+                </div>
+                <div>
+                  <div style={fieldLabelStyle}>Scheduled end</div>
+                  <input type="date" value={form.scheduledEndDate} onChange={(e) => setForm((f) => ({ ...f, scheduledEndDate: e.target.value }))} style={inputStyle} />
+                </div>
+              </div>
               {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
               <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button type="button" onClick={() => setShowAddForm(false)} disabled={creating} style={{ flex: 1, padding: 10, background: '#FFFFFF', color: '#52685F', border: '1px solid #D7E4E1', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
@@ -307,13 +340,19 @@ export default function Projects({ currentUser }) {
       {/* Persistent header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800 }}>{detail.name}</div>
+          <div style={{ fontSize: 18, fontWeight: 800 }}>
+            {detail.name}{!detail.isActive && <span style={{ marginLeft: 10 }}><Chip label="Inactive" tone="slate" /></span>}
+          </div>
           <div style={{ fontSize: 12, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', marginTop: 2 }}>{detail.id} · <Chip label={detail.stage} tone={detail.tone} /></div>
         </div>
         {canWrite && !editingCore && (
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => { setTab('overview'); startEditCore(detail); }} style={linkBtnStyle}>Edit</button>
-            {deletingId === eid ? <Spinner size={12} /> : <button type="button" onClick={() => removeProject(detail)} style={dangerBtnStyle}>Delete</button>}
+            {deletingId === eid ? <Spinner size={12} /> : (
+              <button type="button" onClick={() => toggleActive(detail, !detail.isActive)} style={detail.isActive ? dangerBtnStyle : { ...linkBtnStyle, color: '#1C8A4E' }}>
+                {detail.isActive ? 'Deactivate' : 'Reactivate'}
+              </button>
+            )}
           </div>
         )}
         {editingCore && (
@@ -343,6 +382,8 @@ export default function Projects({ currentUser }) {
             <div><div style={fieldLabelStyle}>Project manager</div><input value={coreDraft.projectManager ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, projectManager: e.target.value }))} style={smallInputStyle} /></div>
             <div><div style={fieldLabelStyle}>Budget ($)</div><input type="number" min="0" step="any" value={coreDraft.budget ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, budget: e.target.value }))} style={smallInputStyle} /></div>
             <div><div style={fieldLabelStyle}>Actual ($)</div><input type="number" min="0" step="any" value={coreDraft.actual ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, actual: e.target.value }))} style={smallInputStyle} /></div>
+            <div><div style={fieldLabelStyle}>Scheduled start</div><input type="date" value={coreDraft.scheduledStartDate ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, scheduledStartDate: e.target.value }))} style={smallInputStyle} /></div>
+            <div><div style={fieldLabelStyle}>Scheduled end</div><input type="date" value={coreDraft.scheduledEndDate ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, scheduledEndDate: e.target.value }))} style={smallInputStyle} /></div>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18 }}>
@@ -350,6 +391,8 @@ export default function Projects({ currentUser }) {
             <div><div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Stage</div><Chip label={detail.stage} tone={detail.tone} /></div>
             <div><div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Project manager</div><div style={{ fontSize: 14, fontWeight: 600 }}>{detail.pm || '—'}</div></div>
             <div><div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Budget / Actual</div><div style={{ fontSize: 14, fontWeight: 600 }}>{detail.budget} / {detail.actual}</div></div>
+            <div><div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Scheduled start</div><div style={{ fontSize: 14, fontWeight: 600 }}>{fmtDate(detail.scheduledStartDate)}</div></div>
+            <div><div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 5 }}>Scheduled end</div><div style={{ fontSize: 14, fontWeight: 600 }}>{fmtDate(detail.scheduledEndDate)}</div></div>
           </div>
         )}
 

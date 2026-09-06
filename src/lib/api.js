@@ -125,11 +125,12 @@ export const adminCreateUser = (email, password, displayName, profile = {}) =>
   request('/api/auth/register', { method: 'POST', body: { email, password, displayName, ...profile } });
 
 // ---- Plants ----
-export const getPlants = () => request('/api/plants');
+export const getPlants = (includeInactive = false) => request(`/api/plants${includeInactive ? '?includeInactive=true' : ''}`);
 export const getPlant = (id) => request(`/api/plants/${id}`);
 export const createPlant = (data) => request('/api/plants', { method: 'POST', body: data });
 export const updatePlant = (id, data) => request(`/api/plants/${id}`, { method: 'PUT', body: data });
-export const deletePlant = (id) => request(`/api/plants/${id}`, { method: 'DELETE' });
+export const deletePlant = (id) => request(`/api/plants/${id}`, { method: 'DELETE' }); // soft-delete: deactivates
+export const setPlantActive = (id, active) => request(`/api/plants/${id}/active`, { method: 'PUT', body: { active } });
 
 // ---- Work orders ----
 export const getWorkOrders = () => request('/api/workorders');
@@ -226,12 +227,13 @@ export const getBomCostVariance = (projectId) => request(`/api/bomitems/cost-var
 export const getReportCatalogue = () => request('/api/reports/catalogue');
 
 // ---- Projects ----
-export const getProjects = () => request('/api/projects');
+export const getProjects = (includeInactive = false) => request(`/api/projects${includeInactive ? '?includeInactive=true' : ''}`);
 export const getProjectById = (id) => request(`/api/projects/${id}`);
 export const getProject = (id) => request(`/api/projects/${id}`);
 export const createProject = (data) => request('/api/projects', { method: 'POST', body: data });
 export const updateProject = (id, data) => request(`/api/projects/${id}`, { method: 'PUT', body: data });
-export const deleteProject = (id) => request(`/api/projects/${id}`, { method: 'DELETE' });
+export const deleteProject = (id) => request(`/api/projects/${id}`, { method: 'DELETE' }); // soft-delete: deactivates (cascades to plants)
+export const setProjectActive = (id, active) => request(`/api/projects/${id}/active`, { method: 'PUT', body: { active } });
 
 // ---- Opportunities ----
 export const getOpportunities = () => request('/api/opportunities');
@@ -478,6 +480,7 @@ export function toPlantView(dto) {
     typeLabel: (PLANT_TYPE_META[dto.type] || {}).label || dto.type,
     latitude: dto.latitude ?? null,
     longitude: dto.longitude ?? null,
+    isActive: dto.isActive !== false,
     projectId: dto.projectId || null,
     projectName: dto.projectName || '',
   };
@@ -819,5 +822,8 @@ export function toProjectView(dto) {
     actual: `$${Number(dto.actual).toLocaleString()}`,
     rawBudget: dto.budget,
     rawActual: dto.actual,
+    isActive: dto.isActive !== false,
+    scheduledStartDate: dto.scheduledStartDate || null,
+    scheduledEndDate: dto.scheduledEndDate || null,
   };
 }

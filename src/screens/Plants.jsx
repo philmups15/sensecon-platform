@@ -7,7 +7,7 @@ import {
   getPlants,
   createPlant,
   updatePlant,
-  deletePlant,
+  setPlantActive,
   getWorkOrders,
   getProjects,
   toPlantView,
@@ -81,7 +81,7 @@ export default function Plants({ currentUser, projectScopeId, projectName, onCha
 
   const load = () => {
     setLoading(true);
-    Promise.all([getPlants(), getWorkOrders(), getProjects()])
+    Promise.all([getPlants(true), getWorkOrders(), getProjects()])
       .then(([plantDtos, workOrderDtos, projectDtos]) => {
         const plantViews = plantDtos.map(toPlantView);
         setPlants(plantViews);
@@ -139,7 +139,7 @@ export default function Plants({ currentUser, projectScopeId, projectName, onCha
         health: form.health,
         projectId: projectScopeId || form.projectId || null,
       });
-      const dtos = await getPlants();
+      const dtos = await getPlants(true);
       const views = dtos.map(toPlantView);
       setPlants(views);
       const created = views.find((p) => p.name === form.name) || views[0];
@@ -187,7 +187,7 @@ export default function Plants({ currentUser, projectScopeId, projectName, onCha
         health: coreDraft.health,
         projectId: projectScopeId || coreDraft.projectId || null,
       });
-      const dtos = await getPlants();
+      const dtos = await getPlants(true);
       setPlants(dtos.map(toPlantView));
       setEditingCore(false);
       notifyChanged();
@@ -198,21 +198,17 @@ export default function Plants({ currentUser, projectScopeId, projectName, onCha
     }
   };
 
-  const removePlant = async (p) => {
-    if (!window.confirm(`Delete plant ${p.name}? This cannot be undone.`)) return;
+  const togglePlantActive = async (p, active) => {
+    if (active === false && !window.confirm(`Deactivate plant "${p.name}"?`)) return;
     setDeletingId(p.id);
     setDeleteError('');
     try {
-      await deletePlant(p.id);
-      setPlants((prev) => prev.filter((item) => item.id !== p.id));
-      if (selectedId === p.id) {
-        const rem = plants.filter((item) => item.id !== p.id);
-        const pool = scoped ? rem.filter((x) => x.projectId === projectScopeId) : rem;
-        setSelectedId(pool[0]?.id ?? null);
-      }
+      await setPlantActive(p.id, active);
+      const views = (await getPlants(true)).map(toPlantView);
+      setPlants(views);
       notifyChanged();
     } catch (err) {
-      setDeleteError(err.message || 'Failed to delete plant. It may still have linked work orders.');
+      setDeleteError(err.message || 'Failed to update plant.');
     } finally {
       setDeletingId(null);
     }
@@ -253,9 +249,11 @@ export default function Plants({ currentUser, projectScopeId, projectName, onCha
             return (
               <div
                 key={p.id}
-                style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1.4fr 0.9fr 0.9fr 1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center' }}
+                style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1.4fr 0.9fr 0.9fr 1fr', padding: '12px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center', opacity: p.isActive ? 1 : 0.55 }}
               >
-                <div onClick={() => { setSelectedId(p.id); setTab('overview'); }} style={{ fontWeight: 600, color: '#12201F', cursor: 'pointer' }}>{p.name}</div>
+                <div onClick={() => { setSelectedId(p.id); setTab('overview'); }} style={{ fontWeight: 600, color: '#12201F', cursor: 'pointer' }}>
+                  {p.name}{!p.isActive && <span style={{ marginLeft: 8 }}><Chip label="Inactive" tone="slate" /></span>}
+                </div>
                 <div><Chip label={p.stageLabel} tone={p.tone} /></div>
                 <div>{p.capacity}</div>
                 <div style={{ color: '#52685F', fontSize: 12 }}>{p.equip}</div>
@@ -268,7 +266,11 @@ export default function Plants({ currentUser, projectScopeId, projectName, onCha
                 <div><Chip label={p.health} tone={p.healthTone} /></div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   {canWrite && <button type="button" onClick={() => { setSelectedId(p.id); startEditCore(p); }} style={linkBtnStyle}>Edit</button>}
-                  {canWrite && (deletingId === p.id ? <Spinner size={12} /> : <button type="button" onClick={() => removePlant(p)} style={dangerBtnStyle}>Delete</button>)}
+                  {canWrite && (deletingId === p.id ? <Spinner size={12} /> : (
+                    <button type="button" onClick={() => togglePlantActive(p, !p.isActive)} style={p.isActive ? dangerBtnStyle : { ...linkBtnStyle, color: '#1C8A4E' }}>
+                      {p.isActive ? 'Deactivate' : 'Reactivate'}
+                    </button>
+                  ))}
                 </div>
               </div>
             );
