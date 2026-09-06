@@ -19,10 +19,12 @@ import {
   canAccess,
   STAGE_META,
   HEALTH_META,
+  PLANT_TYPE_META,
 } from '../lib/api';
 
 const STAGE_ENTRIES = Object.entries(STAGE_META);
 const HEALTH_ENTRIES = Object.entries(HEALTH_META);
+const TYPE_ENTRIES = Object.entries(PLANT_TYPE_META);
 
 const fieldLabelStyle = { fontSize: 11.5, fontWeight: 600, color: '#52685F', marginBottom: 5 };
 const inputStyle = { width: '100%', boxSizing: 'border-box', padding: '8px 10px', border: '1px solid #D7E4E1', borderRadius: 8, fontSize: 13, marginBottom: 12 };
@@ -31,7 +33,7 @@ const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#f
 const linkBtnStyle = { padding: '3px 6px', border: 'none', background: 'transparent', color: '#1F6E72', fontSize: 11, fontWeight: 700, cursor: 'pointer' };
 const dangerBtnStyle = { ...linkBtnStyle, color: '#A6362E' };
 
-const EMPTY_FORM = { name: '', stage: 'DesignSurvey', capacity: '', equipment: '', performanceRatio: '', health: 'Unknown', projectId: '' };
+const EMPTY_FORM = { name: '', stage: 'DesignSurvey', type: 'RooftopCommercial', capacity: '', equipment: '', performanceRatio: '', latitude: '', longitude: '', health: 'Unknown', projectId: '' };
 
 function attachmentExt(fileName) {
   const dot = fileName.lastIndexOf('.');
@@ -124,9 +126,12 @@ export default function Plants({ currentUser }) {
       await createPlant({
         name: form.name,
         stage: form.stage,
+        type: form.type,
         capacity: form.capacity,
         equipment: form.equipment,
         performanceRatio: form.performanceRatio ? Number(form.performanceRatio) : null,
+        latitude: form.latitude !== '' ? Number(form.latitude) : null,
+        longitude: form.longitude !== '' ? Number(form.longitude) : null,
         health: form.health,
         projectId: form.projectId || null,
       });
@@ -147,9 +152,12 @@ export default function Plants({ currentUser }) {
     setCoreDraft({
       name: p.name,
       stage: Object.entries(STAGE_META).find(([, meta]) => meta.key === p.stage)?.[0] || 'DesignSurvey',
+      type: p.type || 'RooftopCommercial',
       capacity: p.capacity,
       equipment: p.equip,
       performanceRatio: p.pr != null ? String(p.pr) : '',
+      latitude: p.latitude != null ? String(p.latitude) : '',
+      longitude: p.longitude != null ? String(p.longitude) : '',
       health: Object.entries(HEALTH_META).find(([, meta]) => meta.label === p.health)?.[0] || 'Unknown',
       projectId: p.projectId || '',
     });
@@ -165,9 +173,12 @@ export default function Plants({ currentUser }) {
       await updatePlant(detail.id, {
         name: coreDraft.name,
         stage: coreDraft.stage,
+        type: coreDraft.type,
         capacity: coreDraft.capacity,
         equipment: coreDraft.equipment,
         performanceRatio: coreDraft.performanceRatio ? Number(coreDraft.performanceRatio) : null,
+        latitude: coreDraft.latitude !== '' ? Number(coreDraft.latitude) : null,
+        longitude: coreDraft.longitude !== '' ? Number(coreDraft.longitude) : null,
         health: coreDraft.health,
         projectId: coreDraft.projectId || null,
       });
@@ -287,6 +298,12 @@ export default function Plants({ currentUser }) {
                 </select>
               </div>
               <div>
+                <div style={fieldLabelStyle}>Type</div>
+                <select value={coreDraft.type ?? 'RooftopCommercial'} onChange={(e) => setCoreDraft((d) => ({ ...d, type: e.target.value }))} style={smallInputStyle}>
+                  {TYPE_ENTRIES.map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
+                </select>
+              </div>
+              <div>
                 <div style={fieldLabelStyle}>Capacity</div>
                 <input value={coreDraft.capacity ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, capacity: e.target.value }))} style={smallInputStyle} />
               </div>
@@ -297,6 +314,14 @@ export default function Plants({ currentUser }) {
               <div>
                 <div style={fieldLabelStyle}>Performance ratio (0–1)</div>
                 <input type="number" min="0" max="1" step="0.01" value={coreDraft.performanceRatio ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, performanceRatio: e.target.value }))} style={smallInputStyle} />
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>Latitude</div>
+                <input type="number" step="any" value={coreDraft.latitude ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, latitude: e.target.value }))} style={smallInputStyle} />
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>Longitude</div>
+                <input type="number" step="any" value={coreDraft.longitude ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, longitude: e.target.value }))} style={smallInputStyle} />
               </div>
               <div>
                 <div style={fieldLabelStyle}>Health</div>
@@ -395,12 +420,26 @@ export default function Plants({ currentUser }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
+                <div style={fieldLabelStyle}>Type</div>
+                <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} style={inputStyle}>
+                  {TYPE_ENTRIES.map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
+                </select>
+              </div>
+              <div>
                 <div style={fieldLabelStyle}>Capacity</div>
                 <input value={form.capacity} onChange={(e) => setForm((f) => ({ ...f, capacity: e.target.value }))} placeholder="e.g. 480 kWp" style={inputStyle} />
               </div>
               <div>
                 <div style={fieldLabelStyle}>Equipment</div>
                 <input value={form.equipment} onChange={(e) => setForm((f) => ({ ...f, equipment: e.target.value }))} placeholder="e.g. 3× 150kW inverters" style={inputStyle} />
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>Latitude</div>
+                <input type="number" step="any" value={form.latitude} onChange={(e) => setForm((f) => ({ ...f, latitude: e.target.value }))} placeholder="-15.42" style={inputStyle} />
+              </div>
+              <div>
+                <div style={fieldLabelStyle}>Longitude</div>
+                <input type="number" step="any" value={form.longitude} onChange={(e) => setForm((f) => ({ ...f, longitude: e.target.value }))} placeholder="28.28" style={inputStyle} />
               </div>
             </div>
 

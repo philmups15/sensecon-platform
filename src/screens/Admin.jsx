@@ -4,12 +4,14 @@ import AdminUsers from './admin/AdminUsers';
 import AdminRoles from './admin/AdminRoles';
 import AdminAuditLog from './admin/AdminAuditLog';
 import AdminIntegrations from './admin/AdminIntegrations';
+import AdminCommissioningTemplates from './admin/AdminCommissioningTemplates';
 import { TabStrip } from './admin/shared';
 
 const TABS = [
   ['overview', 'Overview'],
   ['users', 'Users'],
   ['roles', 'Roles & Permissions'],
+  ['commissioning', 'Commissioning tests'],
   ['audit', 'Audit Log'],
   ['integrations', 'Integrations'],
 ];
@@ -26,6 +28,7 @@ export default function Admin({ currentUser }) {
       {tab === 'overview' && <AdminOverview onNavigate={setTab} />}
       {tab === 'users' && <AdminUsers currentUser={currentUser} />}
       {tab === 'roles' && <AdminRoles currentUser={currentUser} />}
+      {tab === 'commissioning' && <AdminCommissioningTemplates />}
       {tab === 'audit' && <AdminAuditLog />}
       {tab === 'integrations' && <AdminIntegrations />}
     </div>
