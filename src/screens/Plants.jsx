@@ -50,8 +50,10 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-export default function Plants({ currentUser }) {
+export default function Plants({ currentUser, projectScopeId, projectName, onChanged }) {
   const canWrite = canAccess(currentUser?.role, 'plants', 'write');
+  const scoped = !!projectScopeId;
+  const notifyChanged = () => onChanged && onChanged();
 
   const [plants, setPlants] = useState([]);
   const [workOrders, setWorkOrders] = useState([]);
@@ -85,7 +87,8 @@ export default function Plants({ currentUser }) {
         setPlants(plantViews);
         setWorkOrders(workOrderDtos.map(toWorkOrderView));
         setProjects(projectDtos.map(toProjectView));
-        setSelectedId((prev) => (plantViews.some((p) => p.id === prev) ? prev : (plantViews[0]?.id ?? null)));
+        const pool = projectScopeId ? plantViews.filter((p) => p.projectId === projectScopeId) : plantViews;
+        setSelectedId((prev) => (pool.some((p) => p.id === prev) ? prev : (pool[0]?.id ?? null)));
       })
       .catch((err) => setError(err.message || 'Failed to load plants.'))
       .finally(() => setLoading(false));
@@ -105,11 +108,12 @@ export default function Plants({ currentUser }) {
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading plants…</div>;
   if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
 
-  const detail = plants.find((p) => p.id === selectedId) || plants[0];
+  const visiblePlants = scoped ? plants.filter((p) => p.projectId === projectScopeId) : plants;
+  const detail = visiblePlants.find((p) => p.id === selectedId) || visiblePlants[0];
   const openWork = detail ? workOrders.filter((w) => w.plantId === detail.id && w.col !== 'Done') : [];
 
   const openAddForm = () => {
-    setForm(EMPTY_FORM);
+    setForm(scoped ? { ...EMPTY_FORM, projectId: projectScopeId } : EMPTY_FORM);
     setCreateError('');
     setShowAddForm(true);
   };
@@ -133,7 +137,7 @@ export default function Plants({ currentUser }) {
         latitude: form.latitude !== '' ? Number(form.latitude) : null,
         longitude: form.longitude !== '' ? Number(form.longitude) : null,
         health: form.health,
-        projectId: form.projectId || null,
+        projectId: projectScopeId || form.projectId || null,
       });
       const dtos = await getPlants();
       const views = dtos.map(toPlantView);
@@ -141,6 +145,7 @@ export default function Plants({ currentUser }) {
       const created = views.find((p) => p.name === form.name) || views[0];
       setSelectedId(created?.id ?? null);
       setShowAddForm(false);
+      notifyChanged();
     } catch (err) {
       setCreateError(err.message || 'Failed to create plant.');
     } finally {
@@ -180,11 +185,12 @@ export default function Plants({ currentUser }) {
         latitude: coreDraft.latitude !== '' ? Number(coreDraft.latitude) : null,
         longitude: coreDraft.longitude !== '' ? Number(coreDraft.longitude) : null,
         health: coreDraft.health,
-        projectId: coreDraft.projectId || null,
+        projectId: projectScopeId || coreDraft.projectId || null,
       });
       const dtos = await getPlants();
       setPlants(dtos.map(toPlantView));
       setEditingCore(false);
+      notifyChanged();
     } catch (err) {
       setCoreError(err.message || 'Failed to save changes.');
     } finally {
@@ -200,8 +206,11 @@ export default function Plants({ currentUser }) {
       await deletePlant(p.id);
       setPlants((prev) => prev.filter((item) => item.id !== p.id));
       if (selectedId === p.id) {
-        setSelectedId((prev) => plants.filter((item) => item.id !== p.id)[0]?.id ?? null);
+        const rem = plants.filter((item) => item.id !== p.id);
+        const pool = scoped ? rem.filter((x) => x.projectId === projectScopeId) : rem;
+        setSelectedId(pool[0]?.id ?? null);
       }
+      notifyChanged();
     } catch (err) {
       setDeleteError(err.message || 'Failed to delete plant. It may still have linked work orders.');
     } finally {
@@ -232,14 +241,14 @@ export default function Plants({ currentUser }) {
 
       {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
 
-      {plants.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No plants yet.</div>}
+      {visiblePlants.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No plants yet.</div>}
 
-      {plants.length > 0 && (
+      {visiblePlants.length > 0 && (
         <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1.4fr 0.9fr 0.9fr 1fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1' }}>
             <div>Plant</div><div>Stage</div><div>Capacity</div><div>Equipment</div><div>PR</div><div>Health</div><div>Actions</div>
           </div>
-          {plants.map((p) => {
+          {visiblePlants.map((p) => {
             const prPct = p.pr ? Math.round(p.pr * 100) + '%' : '—';
             return (
               <div
@@ -329,13 +338,15 @@ export default function Plants({ currentUser }) {
                   {HEALTH_ENTRIES.map(([key, meta]) => <option key={key} value={key}>{meta.label}</option>)}
                 </select>
               </div>
-              <div>
-                <div style={fieldLabelStyle}>Project</div>
-                <select value={coreDraft.projectId ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, projectId: e.target.value }))} style={smallInputStyle}>
-                  <option value="">— None —</option>
-                  {projects.map((pr) => <option key={pr.entityId} value={pr.entityId}>{pr.name}</option>)}
-                </select>
-              </div>
+              {!scoped && (
+                <div>
+                  <div style={fieldLabelStyle}>Project</div>
+                  <select value={coreDraft.projectId ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, projectId: e.target.value }))} style={smallInputStyle}>
+                    <option value="">— None —</option>
+                    {projects.map((pr) => <option key={pr.entityId} value={pr.entityId}>{pr.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ margin: '8px 0 4px' }}>
@@ -350,26 +361,28 @@ export default function Plants({ currentUser }) {
 
           {!editingCore && (
             <>
-              <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #D7E4E1', marginBottom: 16 }}>
-                {[['overview', 'Overview'], ['handover', 'Handover bundle'], ['work', 'Open work']].map(([key, label]) => {
-                  const active = tab === key;
-                  const color = active ? '#12484B' : '#78908A';
-                  return (
-                    <div key={key} onClick={() => setTab(key)} style={{ padding: '9px 12px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color, borderBottom: `2px solid ${color}` }}>
-                      {label}
-                    </div>
-                  );
-                })}
-              </div>
+              {!scoped && (
+                <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #D7E4E1', marginBottom: 16 }}>
+                  {[['overview', 'Overview'], ['handover', 'Handover bundle'], ['work', 'Open work']].map(([key, label]) => {
+                    const active = tab === key;
+                    const color = active ? '#12484B' : '#78908A';
+                    return (
+                      <div key={key} onClick={() => setTab(key)} style={{ padding: '9px 12px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', color, borderBottom: `2px solid ${color}` }}>
+                        {label}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
-              {tab === 'overview' && (
+              {(scoped || tab === 'overview') && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, fontSize: 13 }}>
                   <div><span style={{ color: '#52685F' }}>Capacity</span><div style={{ fontWeight: 600 }}>{detail.capacity}</div></div>
                   <div><span style={{ color: '#52685F' }}>Equipment</span><div style={{ fontWeight: 600 }}>{detail.equip}</div></div>
                 </div>
               )}
 
-              {tab === 'handover' && (
+              {!scoped && tab === 'handover' && (
                 attachmentsLoading
                   ? <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#78908A' }}><Spinner size={14} />Loading documents…</div>
                   : (
@@ -384,7 +397,7 @@ export default function Plants({ currentUser }) {
                   )
               )}
 
-              {tab === 'work' && (openWork.length > 0 ? openWork.map((w) => (
+              {!scoped && tab === 'work' && (openWork.length > 0 ? openWork.map((w) => (
                 <div key={w.entityId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #E9F1EF', fontSize: 13 }}>
                   <div>{w.title} <span style={{ color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', fontSize: 11 }}>{w.id}</span></div>
                   <Chip label={w.priority} tone={w.priorityTone} />
@@ -398,7 +411,8 @@ export default function Plants({ currentUser }) {
       {showAddForm && (
         <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 460, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Add plant</div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: scoped ? 4 : 16 }}>Add plant</div>
+            {scoped && <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 16 }}>Linked to {projectName}</div>}
 
             <div style={fieldLabelStyle}>Name *</div>
             <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required style={inputStyle} />
@@ -446,11 +460,15 @@ export default function Plants({ currentUser }) {
             <div style={fieldLabelStyle}>Performance ratio (0–1)</div>
             <input type="number" min="0" max="1" step="0.01" value={form.performanceRatio} onChange={(e) => setForm((f) => ({ ...f, performanceRatio: e.target.value }))} placeholder="e.g. 0.82" style={inputStyle} />
 
-            <div style={fieldLabelStyle}>Project</div>
-            <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
-              <option value="">— None —</option>
-              {projects.map((pr) => <option key={pr.entityId} value={pr.entityId}>{pr.name}</option>)}
-            </select>
+            {!scoped && (
+              <>
+                <div style={fieldLabelStyle}>Project</div>
+                <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
+                  <option value="">— None —</option>
+                  {projects.map((pr) => <option key={pr.entityId} value={pr.entityId}>{pr.name}</option>)}
+                </select>
+              </>
+            )}
 
             {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
 

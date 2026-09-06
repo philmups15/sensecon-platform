@@ -4,13 +4,8 @@ import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 import Dashboard from './screens/Dashboard';
 import Opportunities from './screens/Opportunities';
-import Surveys from './screens/Surveys';
-import Design from './screens/Design';
-import Bom from './screens/Bom';
 import Projects from './screens/Projects';
-import Plants from './screens/Plants';
 import WorkOrders from './screens/WorkOrders';
-import Commissioning from './screens/Commissioning';
 import NonConformities from './screens/NonConformities';
 import Reports from './screens/Reports';
 import Portal from './screens/Portal';
@@ -24,13 +19,8 @@ const SCREENS = {
   dashboard: Dashboard,
   profile: Profile,
   opportunities: Opportunities,
-  surveys: Surveys,
-  design: Design,
-  bom: Bom,
   projects: Projects,
-  plants: Plants,
   workorders: WorkOrders,
-  commissioning: Commissioning,
   nonconformities: NonConformities,
   reports: Reports,
   portal: Portal,

@@ -55,8 +55,9 @@ function TestGroup({ title, tests, canWrite, onChange, savingKey }) {
   );
 }
 
-export default function Commissioning({ currentUser }) {
+export default function Commissioning({ currentUser, projectScopeId }) {
   const canWrite = canAccess(currentUser?.role, 'plants', 'write');
+  const scoped = !!projectScopeId;
 
   const [plants, setPlants] = useState([]);
   const [plantId, setPlantId] = useState(null);
@@ -78,7 +79,7 @@ export default function Commissioning({ currentUser }) {
   useEffect(() => {
     Promise.all([getPlants(), getNonConformities()])
       .then(([plantDtos, ncDtos]) => {
-        const pv = plantDtos.map(toPlantView);
+        const pv = plantDtos.map(toPlantView).filter((p) => !projectScopeId || p.projectId === projectScopeId);
         setPlants(pv);
         setPlantId(pv[0]?.id ?? null);
         setNonConformities(ncDtos.map(toNonConformityView));
@@ -149,7 +150,7 @@ export default function Commissioning({ currentUser }) {
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 60, color: '#52685F' }}><Spinner size={18} />Loading commissioning…</div>;
   if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
-  if (plants.length === 0) return <div style={{ padding: 20, color: '#52685F' }}>No plants yet — add a plant first.</div>;
+  if (plants.length === 0) return <div style={{ padding: 20, color: '#52685F' }}>{scoped ? 'Add a plant to this project first — commissioning runs against the project’s plant.' : 'No plants yet — add a plant first.'}</div>;
 
   const plant = plants.find((p) => p.id === plantId);
   const plantNCs = nonConformities.filter((nc) => nc.plantId === plantId);
@@ -166,9 +167,13 @@ export default function Commissioning({ currentUser }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
         {plant && <span style={{ fontSize: 12, color: '#78908A' }}>{plant.typeLabel}</span>}
         <span style={{ fontSize: 12, fontWeight: 600, color: '#52685F' }}>Plant</span>
-        <select value={plantId ?? ''} onChange={(e) => setPlantId(e.target.value)} style={{ border: '1px solid #D7E4E1', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, fontFamily: 'inherit' }}>
-          {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
+        {scoped && plants.length <= 1 ? (
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: '#12201F' }}>{plant?.name}</span>
+        ) : (
+          <select value={plantId ?? ''} onChange={(e) => setPlantId(e.target.value)} style={{ border: '1px solid #D7E4E1', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, fontFamily: 'inherit' }}>
+            {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        )}
       </div>
 
       {testsError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{testsError}</div>}

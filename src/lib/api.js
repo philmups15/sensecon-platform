@@ -736,13 +736,8 @@ export function canAccess(role, module, mode = 'read') {
 // if the role can read at least one of them.
 const SCREEN_MODULES = {
   opportunities: ['opportunities'],
-  surveys: ['surveys'],
-  design: ['designs'],
-  bom: ['bomItems'],
   projects: ['projects'],
-  plants: ['plants'],
   workorders: ['workOrders'],
-  commissioning: ['plants'],
   nonconformities: ['nonConformities'],
   reports: ['reports'],
   portal: ['plants', 'workOrders'],
