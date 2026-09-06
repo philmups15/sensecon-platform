@@ -75,8 +75,10 @@ function MiniAdd({ fields, onAdd }) {
   );
 }
 
-export default function Surveys({ currentUser }) {
+export default function Surveys({ currentUser, projectScopeId, projectName, onChanged }) {
   const canWrite = canAccess(currentUser?.role, 'surveys', 'write');
+  const scoped = !!projectScopeId;
+  const notifyChanged = () => onChanged && onChanged();
 
   const [surveys, setSurveys] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -112,7 +114,8 @@ export default function Surveys({ currentUser }) {
         setSurveys(views);
         setProjects(projectDtos.map(toProjectView));
         setPlants(plantDtos.map(toPlantView));
-        setSelectedId((prev) => (views.some((s) => s.entityId === prev) ? prev : (views[0]?.entityId ?? null)));
+        const pool = projectScopeId ? views.filter((s) => s.projectId === projectScopeId) : views;
+        setSelectedId((prev) => (pool.some((s) => s.entityId === prev) ? prev : (pool[0]?.entityId ?? null)));
       })
       .catch((err) => setError(err.message || 'Failed to load surveys.'))
       .finally(() => setLoading(false));
@@ -120,7 +123,9 @@ export default function Surveys({ currentUser }) {
 
   useEffect(load, []);
 
-  const detail = surveys.find((s) => s.entityId === selectedId);
+  const visibleSurveys = scoped ? surveys.filter((s) => s.projectId === projectScopeId) : surveys;
+  const scopedPlants = scoped ? plants.filter((p) => p.projectId === projectScopeId) : plants;
+  const detail = visibleSurveys.find((s) => s.entityId === selectedId);
 
   const loadFull = (id) => { if (id) getSurveyById(id).then(setFull).catch(() => setFull(null)); };
   useEffect(() => { setFull(null); setChildError(''); if (detail) loadFull(detail.entityId); }, [detail?.entityId]);
@@ -132,7 +137,8 @@ export default function Surveys({ currentUser }) {
   const refresh = () => getSurveys().then((dtos) => setSurveys(dtos.map(toSurveyView)));
 
   const openAddForm = () => {
-    setForm({ ...EMPTY_FORM, date: todayInputValue() });
+    const linkedPlant = scoped ? scopedPlants[0] : null;
+    setForm({ ...EMPTY_FORM, date: todayInputValue(), projectId: projectScopeId || '', plantId: linkedPlant?.id || '', plantName: linkedPlant?.name || '' });
     setCreateError('');
     setShowAddForm(true);
   };
@@ -151,12 +157,13 @@ export default function Surveys({ currentUser }) {
         date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
         status: form.status,
         progress: 0,
-        projectId: form.projectId || null,
+        projectId: projectScopeId || form.projectId || null,
         plantId: form.plantId || null,
       });
       await refresh();
       setSelectedId(id);
       setShowAddForm(false);
+      notifyChanged();
     } catch (err) {
       setCreateError(err.message || 'Failed to create survey.');
     } finally {
@@ -190,11 +197,12 @@ export default function Surveys({ currentUser }) {
         date: draft.date ? new Date(draft.date).toISOString() : new Date().toISOString(),
         status: draft.status,
         progress: Number(draft.progress) || 0,
-        projectId: draft.projectId || null,
+        projectId: projectScopeId || draft.projectId || null,
         plantId: draft.plantId || null,
       });
       await refresh();
       setEditing(false);
+      notifyChanged();
     } catch (err) {
       setSaveError(err.message || 'Failed to save changes.');
     } finally {
@@ -214,10 +222,11 @@ export default function Surveys({ currentUser }) {
         date: detail.rawDate,
         status: 'SignedOff',
         progress: detail.progress,
-        projectId: detail.projectId || null,
+        projectId: projectScopeId || detail.projectId || null,
         plantId: detail.plantId || null,
       });
       await refresh();
+      notifyChanged();
     } catch (err) {
       setSignOffError(err.message || 'Failed to sign off survey.');
     } finally {
@@ -233,7 +242,11 @@ export default function Surveys({ currentUser }) {
       await deleteSurvey(s.entityId);
       const remaining = surveys.filter((item) => item.entityId !== s.entityId);
       setSurveys(remaining);
-      if (selectedId === s.entityId) setSelectedId(remaining[0]?.entityId ?? null);
+      if (selectedId === s.entityId) {
+        const pool = scoped ? remaining.filter((x) => x.projectId === projectScopeId) : remaining;
+        setSelectedId(pool[0]?.entityId ?? null);
+      }
+      notifyChanged();
     } catch (err) {
       setDeleteError(err.message || 'Failed to delete survey.');
     } finally {
@@ -249,12 +262,12 @@ export default function Surveys({ currentUser }) {
       </div>
       {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
 
-      {surveys.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No surveys yet.</div>}
+      {visibleSurveys.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No surveys yet.</div>}
 
-      {surveys.length > 0 && (
+      {visibleSurveys.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 16, alignItems: 'start' }}>
           <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
-            {surveys.map((sv) => (
+            {visibleSurveys.map((sv) => (
               <div key={sv.entityId} onClick={() => setSelectedId(sv.entityId)} style={{ padding: '13px 16px', borderBottom: '1px solid #E9F1EF', cursor: 'pointer', background: sv.entityId === selectedId ? '#E4F0EF' : 'transparent' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{sv.plant}</div>
@@ -305,13 +318,15 @@ export default function Surveys({ currentUser }) {
                     <div style={fieldLabelStyle}>Plant / site name</div>
                     <input value={draft.plantName ?? ''} onChange={(e) => setDraft((d) => ({ ...d, plantName: e.target.value }))} style={smallInputStyle} />
                   </div>
-                  <div>
-                    <div style={fieldLabelStyle}>Project</div>
-                    <select value={draft.projectId ?? ''} onChange={(e) => setDraft((d) => ({ ...d, projectId: e.target.value }))} style={smallInputStyle}>
-                      <option value="">— None —</option>
-                      {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
-                    </select>
-                  </div>
+                  {!scoped && (
+                    <div>
+                      <div style={fieldLabelStyle}>Project</div>
+                      <select value={draft.projectId ?? ''} onChange={(e) => setDraft((d) => ({ ...d, projectId: e.target.value }))} style={smallInputStyle}>
+                        <option value="">— None —</option>
+                        {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+                      </select>
+                    </div>
+                  )}
                   <div>
                     <div style={fieldLabelStyle}>Plant</div>
                     <select
@@ -324,7 +339,7 @@ export default function Surveys({ currentUser }) {
                       style={smallInputStyle}
                     >
                       <option value="">— None —</option>
-                      {plants.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+                      {scopedPlants.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
                     </select>
                   </div>
                   <div>
@@ -440,16 +455,21 @@ export default function Surveys({ currentUser }) {
       {showAddForm && (
         <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 440, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Add site survey</div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Add site survey</div>
+            {scoped && <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 16 }}>Linked to {projectName}</div>}
 
             <div style={fieldLabelStyle}>Plant / site name *</div>
             <input value={form.plantName} onChange={(e) => setForm((f) => ({ ...f, plantName: e.target.value }))} required style={inputStyle} />
 
-            <div style={fieldLabelStyle}>Project</div>
-            <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
-              <option value="">— None —</option>
-              {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
-            </select>
+            {!scoped && (
+              <>
+                <div style={fieldLabelStyle}>Project</div>
+                <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
+                  <option value="">— None —</option>
+                  {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+                </select>
+              </>
+            )}
 
             <div style={fieldLabelStyle}>Plant</div>
             <select
@@ -462,7 +482,7 @@ export default function Surveys({ currentUser }) {
               style={inputStyle}
             >
               <option value="">— None —</option>
-              {plants.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+              {scopedPlants.map((pl) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
             </select>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>

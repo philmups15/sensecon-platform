@@ -30,8 +30,10 @@ const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#f
 const EMPTY_FORM = { component: '', category: 'Other', quantity: '1', unitCost: '', supplier: '', status: 'Ordered', plantId: '', projectId: '' };
 const money = (n) => `$${Number(n || 0).toLocaleString()}`;
 
-export default function Bom({ currentUser }) {
+export default function Bom({ currentUser, projectScopeId, projectName, onChanged }) {
   const canWrite = canAccess(currentUser?.role, 'bomItems', 'write');
+  const scoped = !!projectScopeId;
+  const notifyChanged = () => onChanged && onChanged();
 
   const [rows, setRows] = useState([]);
   const [plants, setPlants] = useState([]);
@@ -39,7 +41,7 @@ export default function Bom({ currentUser }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [varianceProjectId, setVarianceProjectId] = useState('');
+  const [varianceProjectId, setVarianceProjectId] = useState(projectScopeId || '');
   const [variance, setVariance] = useState([]);
 
   const [editingId, setEditingId] = useState(null);
@@ -61,7 +63,7 @@ export default function Bom({ currentUser }) {
         setPlants(plantDtos.map(toPlantView));
         const pv = projectDtos.map(toProjectView);
         setProjects(pv);
-        setVarianceProjectId((prev) => prev || pv[0]?.entityId || '');
+        setVarianceProjectId((prev) => prev || projectScopeId || pv[0]?.entityId || '');
       })
       .catch((err) => setError(err.message || 'Failed to load BOM items.'))
       .finally(() => setLoading(false));
@@ -77,6 +79,8 @@ export default function Bom({ currentUser }) {
   if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
 
   const refresh = () => getBomItems().then((dtos) => setRows(dtos.map(toBomView)));
+  const visibleRows = scoped ? rows.filter((r) => r.projectId === projectScopeId) : rows;
+  const scopedPlants = scoped ? plants.filter((p) => p.projectId === projectScopeId) : plants;
   const maxK = Math.max(1, ...variance.flatMap((v) => [v.budget, v.actual]));
 
   const submitAddForm = async (e) => {
@@ -88,10 +92,10 @@ export default function Bom({ currentUser }) {
         component: form.component, category: form.category,
         quantity: Number(form.quantity) || 1, unitCost: Number(form.unitCost) || 0,
         supplier: form.supplier, status: form.status,
-        plantId: form.plantId || null, projectId: form.projectId || null,
+        plantId: form.plantId || null, projectId: projectScopeId || form.projectId || null,
       });
       await refresh();
-      setShowAddForm(false); setForm(EMPTY_FORM);
+      setShowAddForm(false); setForm(EMPTY_FORM); notifyChanged();
     } catch (err) { setCreateError(err.message || 'Failed to create BOM item.'); }
     finally { setCreating(false); }
   };
@@ -113,10 +117,10 @@ export default function Bom({ currentUser }) {
         component: draft.component, category: draft.category,
         quantity: Number(draft.quantity) || 1, unitCost: Number(draft.unitCost) || 0,
         supplier: draft.supplier, status: draft.status,
-        plantId: draft.plantId || null, projectId: draft.projectId || null,
+        plantId: draft.plantId || null, projectId: projectScopeId || draft.projectId || null,
       });
       await refresh();
-      setEditingId(null);
+      setEditingId(null); notifyChanged();
     } catch (err) { setRowError(err.message || 'Failed to save.'); }
     finally { setSaving(false); }
   };
@@ -127,6 +131,7 @@ export default function Bom({ currentUser }) {
     try {
       await deleteBomItem(row.entityId);
       setRows((prev) => prev.filter((item) => item.entityId !== row.entityId));
+      notifyChanged();
     } catch (err) { setRowError(err.message || 'Failed to delete.'); }
     finally { setDeletingId(null); }
   };
@@ -137,7 +142,7 @@ export default function Bom({ currentUser }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex' }}>
         <div style={{ flex: 1 }} />
-        {canWrite && <button onClick={() => { setForm({ ...EMPTY_FORM, projectId: projects[0]?.entityId || '' }); setCreateError(''); setShowAddForm(true); }} style={primaryBtnStyle}>+ Add BOM item</button>}
+        {canWrite && <button onClick={() => { setForm({ ...EMPTY_FORM, projectId: projectScopeId || projects[0]?.entityId || '' }); setCreateError(''); setShowAddForm(true); }} style={primaryBtnStyle}>+ Add BOM item</button>}
       </div>
       {rowError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{rowError}</div>}
 
@@ -145,8 +150,8 @@ export default function Bom({ currentUser }) {
         <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1', minWidth: 900 }}>
           <div>Component</div><div>Category</div><div>Qty</div><div>Unit cost</div><div>Supplier</div><div>Project</div><div>Plant</div><div>Status</div><div>Actions</div>
         </div>
-        {rows.length === 0 && <div style={{ padding: 16, fontSize: 13, color: '#78908A' }}>No BOM lines yet.</div>}
-        {rows.map((b) => {
+        {visibleRows.length === 0 && <div style={{ padding: 16, fontSize: 13, color: '#78908A' }}>No BOM lines yet.</div>}
+        {visibleRows.map((b) => {
           const editing = editingId === b.entityId;
           return (
             <div key={b.entityId} style={{ display: 'grid', gridTemplateColumns: cols, padding: '10px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center', minWidth: 900 }}>
@@ -159,13 +164,17 @@ export default function Bom({ currentUser }) {
                   <input type="number" min="1" value={draft.quantity} onChange={(e) => setDraft((d) => ({ ...d, quantity: e.target.value }))} style={smallInputStyle} />
                   <input type="number" min="0" step="0.01" value={draft.unitCost} onChange={(e) => setDraft((d) => ({ ...d, unitCost: e.target.value }))} style={smallInputStyle} />
                   <input value={draft.supplier} onChange={(e) => setDraft((d) => ({ ...d, supplier: e.target.value }))} style={smallInputStyle} />
-                  <select value={draft.projectId} onChange={(e) => setDraft((d) => ({ ...d, projectId: e.target.value }))} style={smallInputStyle}>
-                    <option value="">— None —</option>
-                    {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
-                  </select>
+                  {scoped ? (
+                    <div style={{ fontSize: 12, color: '#1F6E72' }}>{projectName || 'This project'}</div>
+                  ) : (
+                    <select value={draft.projectId} onChange={(e) => setDraft((d) => ({ ...d, projectId: e.target.value }))} style={smallInputStyle}>
+                      <option value="">— None —</option>
+                      {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+                    </select>
+                  )}
                   <select value={draft.plantId} onChange={(e) => setDraft((d) => ({ ...d, plantId: e.target.value }))} style={smallInputStyle}>
                     <option value="">— None —</option>
-                    {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    {scopedPlants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                   <select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))} style={smallInputStyle}>
                     {STATUS_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
@@ -199,10 +208,12 @@ export default function Bom({ currentUser }) {
       <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 18 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700 }}>Cost variance vs budget</div>
-          <select value={varianceProjectId} onChange={(e) => setVarianceProjectId(e.target.value)} style={{ border: '1px solid #D7E4E1', borderRadius: 8, padding: '6px 10px', fontSize: 12.5, fontFamily: 'inherit' }}>
-            <option value="">Select a project…</option>
-            {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
-          </select>
+          {!scoped && (
+            <select value={varianceProjectId} onChange={(e) => setVarianceProjectId(e.target.value)} style={{ border: '1px solid #D7E4E1', borderRadius: 8, padding: '6px 10px', fontSize: 12.5, fontFamily: 'inherit' }}>
+              <option value="">Select a project…</option>
+              {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+            </select>
+          )}
         </div>
         {variance.length === 0 && <div style={{ fontSize: 12.5, color: '#78908A' }}>No BOM lines or budget lines for this project yet.</div>}
         {variance.map((v) => (
@@ -249,15 +260,19 @@ export default function Bom({ currentUser }) {
             </div>
             <div style={fieldLabelStyle}>Supplier</div>
             <input value={form.supplier} onChange={(e) => setForm((f) => ({ ...f, supplier: e.target.value }))} style={inputStyle} />
-            <div style={fieldLabelStyle}>Project</div>
-            <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
-              <option value="">— None —</option>
-              {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
-            </select>
+            {!scoped && (
+              <>
+                <div style={fieldLabelStyle}>Project</div>
+                <select value={form.projectId} onChange={(e) => setForm((f) => ({ ...f, projectId: e.target.value }))} style={inputStyle}>
+                  <option value="">— None —</option>
+                  {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+                </select>
+              </>
+            )}
             <div style={fieldLabelStyle}>Plant</div>
             <select value={form.plantId} onChange={(e) => setForm((f) => ({ ...f, plantId: e.target.value }))} style={inputStyle}>
               <option value="">— None —</option>
-              {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {scopedPlants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
             {createError && <div style={{ marginBottom: 12, padding: '7px 10px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12 }}>{createError}</div>}
             <div style={{ display: 'flex', gap: 8 }}>

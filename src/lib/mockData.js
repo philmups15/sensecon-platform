@@ -7,18 +7,13 @@ export const navGroups = [
     label: 'Pre-operations',
     items: [
       ['Opportunities', 'opportunities'],
-      ['Site surveys', 'surveys'],
-      ['Design', 'design'],
-      ['BOM & procurement', 'bom'],
       ['Projects', 'projects'],
     ],
   },
   {
     label: 'Operations',
     items: [
-      ['Plants', 'plants'],
       ['Work orders', 'workorders'],
-      ['Commissioning & handover', 'commissioning'],
       ['Non-conformities', 'nonconformities'],
     ],
   },

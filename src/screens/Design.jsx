@@ -33,8 +33,10 @@ const primaryBtnStyle = { padding: '9px 16px', background: '#1F6E72', color: '#f
 const EMPTY_FORM = { projectId: '', surveyId: '', projectName: '', status: 'InReview', revision: '' };
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
-export default function Design({ currentUser }) {
+export default function Design({ currentUser, projectScopeId, projectName, onChanged }) {
   const canWrite = canAccess(currentUser?.role, 'designs', 'write');
+  const scoped = !!projectScopeId;
+  const notifyChanged = () => onChanged && onChanged();
 
   const [designs, setDesigns] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -74,14 +76,17 @@ export default function Design({ currentUser }) {
         setDesigns(views);
         setProjects(projectDtos.map(toProjectView));
         setSurveys(surveyDtos.map(toSurveyView));
-        setSelectedId((prev) => (views.some((d) => d.entityId === prev) ? prev : (views[0]?.entityId ?? null)));
+        const pool = projectScopeId ? views.filter((d) => d.projectId === projectScopeId) : views;
+        setSelectedId((prev) => (pool.some((d) => d.entityId === prev) ? prev : (pool[0]?.entityId ?? null)));
       })
       .catch((err) => setError(err.message || 'Failed to load designs.'))
       .finally(() => setLoading(false));
   };
   useEffect(load, []);
 
-  const detail = designs.find((d) => d.entityId === selectedId) || designs[0];
+  const visibleDesigns = scoped ? designs.filter((d) => d.projectId === projectScopeId) : designs;
+  const scopedSurveys = scoped ? surveys.filter((s) => s.projectId === projectScopeId) : surveys;
+  const detail = visibleDesigns.find((d) => d.entityId === selectedId) || visibleDesigns[0];
 
   const loadFull = (id) => { if (id) getDesignById(id).then(setFull).catch(() => setFull(null)); };
   useEffect(() => { setFull(null); setEditingCore(false); if (detail) loadFull(detail.entityId); }, [detail?.entityId]);
@@ -99,7 +104,11 @@ export default function Design({ currentUser }) {
 
   const refresh = () => getDesigns().then((dtos) => setDesigns(dtos.map(toDesignView)));
 
-  const openAddForm = () => { setForm(EMPTY_FORM); setCreateError(''); setShowAddForm(true); };
+  const openAddForm = () => {
+    setForm(scoped ? { ...EMPTY_FORM, projectId: projectScopeId, projectName: projectName || '' } : EMPTY_FORM);
+    setCreateError('');
+    setShowAddForm(true);
+  };
 
   const pickProject = (setter) => (e) => {
     const projectId = e.target.value;
@@ -123,9 +132,9 @@ export default function Design({ currentUser }) {
     try {
       const id = await createDesign({
         projectName: form.projectName, status: form.status, revision: form.revision,
-        surveyId: form.surveyId || null, projectId: form.projectId || null,
+        surveyId: form.surveyId || null, projectId: projectScopeId || form.projectId || null,
       });
-      await refresh(); setSelectedId(id); setShowAddForm(false);
+      await refresh(); setSelectedId(id); setShowAddForm(false); notifyChanged();
     } catch (err) { setCreateError(err.message || 'Failed to create design.'); }
     finally { setCreating(false); }
   };
@@ -140,9 +149,9 @@ export default function Design({ currentUser }) {
     try {
       await updateDesign(detail.entityId, {
         projectName: coreDraft.projectName, status: coreDraft.status, revision: coreDraft.revision,
-        surveyId: coreDraft.surveyId || null, projectId: coreDraft.projectId || null,
+        surveyId: coreDraft.surveyId || null, projectId: projectScopeId || coreDraft.projectId || null,
       });
-      await refresh(); refreshFull(); setEditingCore(false);
+      await refresh(); refreshFull(); setEditingCore(false); notifyChanged();
     } catch (err) { setCoreError(err.message || 'Failed to save changes.'); }
     finally { setSavingCore(false); }
   };
@@ -155,6 +164,7 @@ export default function Design({ currentUser }) {
       const remaining = designs.filter((item) => item.entityId !== d.entityId);
       setDesigns(remaining);
       if (selectedId === d.entityId) setSelectedId(remaining[0]?.entityId ?? null);
+      notifyChanged();
     } catch (err) { setDeleteError(err.message || 'Failed to delete design.'); }
     finally { setDeletingId(null); }
   };
@@ -194,12 +204,12 @@ export default function Design({ currentUser }) {
       </div>
 
       {deleteError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
-      {designs.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No designs yet.</div>}
+      {visibleDesigns.length === 0 && <div style={{ padding: 20, color: '#52685F' }}>No designs yet.</div>}
 
-      {designs.length > 0 && detail && (
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 260px', gap: 16, alignItems: 'start' }}>
+      {visibleDesigns.length > 0 && detail && (
+        <div style={{ display: 'grid', gridTemplateColumns: scoped ? 'minmax(200px, 260px) minmax(0, 1fr)' : '300px 1fr 260px', gap: 16, alignItems: 'start' }}>
           <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
-            {designs.map((d) => (
+            {visibleDesigns.map((d) => (
               <div key={d.entityId} onClick={() => setSelectedId(d.entityId)} style={{ padding: '13px 16px', borderBottom: '1px solid #E9F1EF', cursor: 'pointer', background: d.entityId === selectedId ? '#E4F0EF' : 'transparent' }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{d.project}</div>
                 <div style={{ fontSize: 11, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace', margin: '3px 0 7px' }}>{d.id} · Rev {d.rev}</div>
@@ -229,18 +239,20 @@ export default function Design({ currentUser }) {
 
             {editingCore ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-                <div>
-                  <div style={fieldLabelStyle}>Project</div>
-                  <select value={coreDraft.projectId ?? ''} onChange={pickProject(setCoreDraft)} style={smallInputStyle}>
-                    <option value="">— None —</option>
-                    {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
-                  </select>
-                </div>
+                {!scoped && (
+                  <div>
+                    <div style={fieldLabelStyle}>Project</div>
+                    <select value={coreDraft.projectId ?? ''} onChange={pickProject(setCoreDraft)} style={smallInputStyle}>
+                      <option value="">— None —</option>
+                      {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <div style={fieldLabelStyle}>Survey</div>
                   <select value={coreDraft.surveyId ?? ''} onChange={pickSurvey(setCoreDraft)} style={smallInputStyle}>
                     <option value="">— None —</option>
-                    {surveys.map((s) => <option key={s.entityId} value={s.entityId}>{s.id} · {s.plant}</option>)}
+                    {scopedSurveys.map((s) => <option key={s.entityId} value={s.entityId}>{s.id} · {s.plant}</option>)}
                   </select>
                 </div>
                 <div>
@@ -313,7 +325,7 @@ export default function Design({ currentUser }) {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: scoped ? 'grid' : 'flex', gridTemplateColumns: scoped ? '1fr 1fr' : undefined, flexDirection: scoped ? undefined : 'column', gap: 14, gridColumn: scoped ? '1 / -1' : undefined }}>
             <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, padding: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 700 }}>Attachments</div>
@@ -363,22 +375,31 @@ export default function Design({ currentUser }) {
       {showAddForm && (
         <div onClick={() => !creating && setShowAddForm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(18,32,31,0.35)', zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <form onClick={(e) => e.stopPropagation()} onSubmit={submitAddForm} style={{ width: 440, maxHeight: '86vh', overflow: 'auto', background: '#FFFFFF', borderRadius: 12, padding: 22, boxShadow: '0 12px 32px rgba(18,32,31,0.2)' }}>
-            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Add design</div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Add design</div>
+            {scoped && <div style={{ fontSize: 11.5, color: '#78908A', marginBottom: 16 }}>Linked to {projectName}</div>}
 
-            <div style={fieldLabelStyle}>Project</div>
-            <select value={form.projectId} onChange={pickProject(setForm)} style={inputStyle}>
-              <option value="">— None —</option>
-              {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
-            </select>
+            {!scoped && (
+              <>
+                <div style={fieldLabelStyle}>Project</div>
+                <select value={form.projectId} onChange={pickProject(setForm)} style={inputStyle}>
+                  <option value="">— None —</option>
+                  {projects.map((p) => <option key={p.entityId} value={p.entityId}>{p.name}</option>)}
+                </select>
+              </>
+            )}
 
             <div style={fieldLabelStyle}>Survey</div>
             <select value={form.surveyId} onChange={pickSurvey(setForm)} style={inputStyle}>
               <option value="">— None —</option>
-              {surveys.map((s) => <option key={s.entityId} value={s.entityId}>{s.id} · {s.plant}</option>)}
+              {scopedSurveys.map((s) => <option key={s.entityId} value={s.entityId}>{s.id} · {s.plant}</option>)}
             </select>
 
-            <div style={fieldLabelStyle}>Project name label *</div>
-            <input value={form.projectName} onChange={(e) => setForm((f) => ({ ...f, projectName: e.target.value }))} placeholder="Filled from Project, or type one" required style={inputStyle} />
+            {!scoped && (
+              <>
+                <div style={fieldLabelStyle}>Project name label *</div>
+                <input value={form.projectName} onChange={(e) => setForm((f) => ({ ...f, projectName: e.target.value }))} placeholder="Filled from Project, or type one" required style={inputStyle} />
+              </>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
