@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Spinner from '../../components/Spinner';
+import ExportButton from '../../components/ExportButton';
 import { ALL_ROLES, USER_ROLE_META, getUsers, getRolePermissions, updateRolePermission, setRolePermissionsCache } from '../../lib/api';
 import { cardStyle, sectionHeaderStyle, bannerStyle, errorBannerStyle, thStyle, tdStyle } from './shared';
 
@@ -85,6 +86,10 @@ export default function AdminRoles({ currentUser }) {
           <div style={{ fontSize: 17, fontWeight: 700 }}>Roles & Permissions</div>
           <div style={{ fontSize: 12.5, color: '#78908A', marginTop: 2 }}>What each of the 5 fixed roles can see and change.</div>
         </div>
+        <ExportButton filename="role-permissions" sheet="Permissions" rows={() => rows.map((r) => ({
+          Role: (USER_ROLE_META[r.role] || {}).label || r.role, Module: r.module,
+          Read: r.canRead ? 'Yes' : 'No', Write: r.canWrite ? 'Yes' : 'No',
+        }))} />
       </div>
 
       <div style={bannerStyle}>

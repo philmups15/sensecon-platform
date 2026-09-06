@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getOpportunities,
   getOpportunity,
@@ -433,6 +434,10 @@ export default function Opportunities({ currentUser, onNavigate }) {
               Kanban
             </button>
             <div style={{ flex: 1 }} />
+            <ExportButton filename="opportunities" sheet="Opportunities" rows={() => filteredOpportunities.map((o) => ({
+              Ref: o.id, Customer: o.customer, Capacity: o.capacity, Stage: o.stage, Location: o.location,
+              'Next action': o.next, Owner: o.owner, Value: o.rawValue, Converted: o.converted ? 'Yes' : 'No',
+            }))} />
             {canWrite && (
               <button onClick={openAddForm} style={{ ...primaryBtnStyle, padding: '7px 14px' }}>
                 + Add opportunity

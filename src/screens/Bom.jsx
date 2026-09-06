@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getBomItems,
   createBomItem,
@@ -140,8 +141,13 @@ export default function Bom({ currentUser, projectScopeId, projectName, onChange
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', gap: 10 }}>
         <div style={{ flex: 1 }} />
+        <ExportButton filename="bill-of-materials" sheet="BOM" rows={() => visibleRows.map((b) => ({
+          Component: b.component, Category: b.categoryLabel, Quantity: b.qty, 'Unit cost': b.rawUnitCost,
+          'Line total': b.qty * b.rawUnitCost, Supplier: b.supplier || '',
+          Project: b.projectName || '', Plant: b.plantName || '', Status: b.status,
+        }))} />
         {canWrite && <button onClick={() => { setForm({ ...EMPTY_FORM, projectId: projectScopeId || projects[0]?.entityId || '' }); setCreateError(''); setShowAddForm(true); }} style={primaryBtnStyle}>+ Add BOM item</button>}
       </div>
       {rowError && <div style={{ padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{rowError}</div>}

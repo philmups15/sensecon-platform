@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Chip from '../components/Chip';
 import Spinner from '../components/Spinner';
+import ExportButton from '../components/ExportButton';
 import {
   getWorkOrders,
   getWorkOrderById,
@@ -182,8 +183,13 @@ export default function WorkOrders({ currentUser }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14, gap: 10 }}>
         <div style={{ flex: 1 }} />
+        <ExportButton filename="work-orders" sheet="Work orders" rows={() => workOrders.map((w) => ({
+          Ref: w.id, Title: w.title, Plant: w.plant || '', Project: projectFor(w.plantId) || '',
+          Type: w.type, Priority: w.priority, Assignee: w.assignee || '',
+          'Due date': dateInput(w.dueDate), Status: w.col,
+        }))} />
         {canWrite && <button onClick={() => { setForm({ ...EMPTY_FORM, plantId: plants[0]?.id || '' }); setCreateError(''); setShowAddForm(true); }} style={primaryBtnStyle}>+ Add work order</button>}
       </div>
       {deleteError && <div style={{ marginBottom: 12, padding: '8px 12px', background: '#FBE7E5', color: '#A6362E', borderRadius: 8, fontSize: 12.5 }}>{deleteError}</div>}
