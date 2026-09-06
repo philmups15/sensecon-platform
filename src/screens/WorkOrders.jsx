@@ -107,6 +107,7 @@ export default function WorkOrders({ currentUser }) {
   useEffect(load, []);
 
   const detail = workOrders.find((w) => w.id === selectedId) || workOrders[0];
+  const projectFor = (plantId) => plants.find((p) => p.id === plantId)?.projectName || '';
 
   const loadWoDetail = (entityId) => { if (entityId) getWorkOrderById(entityId).then(setWoDetail).catch(() => setWoDetail(null)); };
   useEffect(() => { setWoDetail(null); if (detail) loadWoDetail(detail.entityId); }, [detail?.entityId]);
@@ -201,6 +202,7 @@ export default function WorkOrders({ currentUser }) {
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: '#12201F', marginTop: 6 }}>{c.title}</div>
                   <div style={{ fontSize: 11, color: '#52685F', marginTop: 4 }}>{c.plant}</div>
+                  {projectFor(c.plantId) && <div style={{ fontSize: 10.5, color: '#1F6E72', fontWeight: 600, marginTop: 2 }}>{projectFor(c.plantId)}</div>}
                   <div style={{ fontSize: 11, color: '#78908A', marginTop: 6 }}>{c.assignee}{c.dueDate ? ` · due ${dateInput(c.dueDate)}` : ''}</div>
                 </div>
               ))}
@@ -215,7 +217,7 @@ export default function WorkOrders({ currentUser }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               {!editingCore && <div style={{ fontSize: 15, fontWeight: 700 }}>{detail.title} <span style={{ fontSize: 11, color: '#78908A', fontFamily: 'SF Mono, Consolas, monospace' }}>{detail.id}</span></div>}
-              {!editingCore && <div style={{ fontSize: 12, color: '#52685F', marginTop: 4 }}>{detail.plant} · {detail.assignee}{detail.dueDate ? ` · due ${dateInput(detail.dueDate)}` : ''}</div>}
+              {!editingCore && <div style={{ fontSize: 12, color: '#52685F', marginTop: 4 }}>{detail.plant}{projectFor(detail.plantId) ? <> · <span style={{ color: '#1F6E72', fontWeight: 600 }}>{projectFor(detail.plantId)}</span></> : ''} · {detail.assignee}{detail.dueDate ? ` · due ${dateInput(detail.dueDate)}` : ''}</div>}
             </div>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               {canWrite && !editingCore && <button onClick={() => startEditCore(detail)} style={linkBtnStyle}>Edit</button>}
@@ -238,7 +240,7 @@ export default function WorkOrders({ currentUser }) {
               <div><div style={fieldLabelStyle}>Title</div><input value={coreDraft.title ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, title: e.target.value }))} style={smallInputStyle} /></div>
               <div><div style={fieldLabelStyle}>Plant</div>
                 <select value={coreDraft.plantId ?? ''} onChange={(e) => setCoreDraft((d) => ({ ...d, plantId: e.target.value }))} style={smallInputStyle}>
-                  {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {plants.map((p) => <option key={p.id} value={p.id}>{p.name}{p.projectName ? ` — ${p.projectName}` : ''}</option>)}
                 </select></div>
               <div><div style={fieldLabelStyle}>Type</div>
                 <select value={coreDraft.type ?? 'OM'} onChange={(e) => setCoreDraft((d) => ({ ...d, type: e.target.value }))} style={smallInputStyle}>
@@ -348,8 +350,9 @@ export default function WorkOrders({ currentUser }) {
             <div style={fieldLabelStyle}>Plant *</div>
             <select value={form.plantId} onChange={(e) => setForm((f) => ({ ...f, plantId: e.target.value }))} required style={inputStyle}>
               <option value="" disabled>Select a plant…</option>
-              {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {plants.map((p) => <option key={p.id} value={p.id}>{p.name}{p.projectName ? ` — ${p.projectName}` : ''}</option>)}
             </select>
+            {projectFor(form.plantId) && <div style={{ marginTop: -6, marginBottom: 12, fontSize: 11.5, color: '#1F6E72' }}>Project: {projectFor(form.plantId)}</div>}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div><div style={fieldLabelStyle}>Type</div>
                 <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))} style={inputStyle}>

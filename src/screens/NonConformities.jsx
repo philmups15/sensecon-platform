@@ -60,6 +60,7 @@ export default function NonConformities({ currentUser }) {
   if (error) return <div style={{ padding: 20, color: '#A6362E' }}>{error}</div>;
 
   const plantName = (id) => plants.find((p) => p.id === id)?.name || '';
+  const projectFor = (id) => plants.find((p) => p.id === id)?.projectName || '';
 
   const submitAdd = async (e) => {
     e.preventDefault();
@@ -112,14 +113,14 @@ export default function NonConformities({ currentUser }) {
       </div>
 
       <div style={{ background: '#FFFFFF', border: '1px solid #D7E4E1', borderRadius: 12, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '0.7fr 2.4fr 1.3fr 0.9fr 0.9fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1' }}>
-          <div>Ref</div><div>Description</div><div>Plant</div><div>Status</div><div>Actions</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '0.55fr 2.1fr 1.1fr 1.1fr 0.8fr 0.85fr', padding: '10px 16px', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: '#78908A', borderBottom: '1px solid #D7E4E1' }}>
+          <div>Ref</div><div>Description</div><div>Plant</div><div>Project</div><div>Status</div><div>Actions</div>
         </div>
         {rows.length === 0 && <div style={{ padding: 16, fontSize: 13, color: '#78908A' }}>No non-conformities logged.</div>}
         {rows.map((r) => {
           const editing = editingId === r.entityId;
           return (
-            <div key={r.entityId} style={{ display: 'grid', gridTemplateColumns: '0.7fr 2.4fr 1.3fr 0.9fr 0.9fr', padding: '10px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center' }}>
+            <div key={r.entityId} style={{ display: 'grid', gridTemplateColumns: '0.55fr 2.1fr 1.1fr 1.1fr 0.8fr 0.85fr', padding: '10px 16px', fontSize: 13, borderBottom: '1px solid #E9F1EF', alignItems: 'center' }}>
               <div style={{ fontFamily: 'SF Mono, Consolas, monospace', fontSize: 11, color: '#78908A' }}>{r.id}</div>
               {editing ? (
                 <>
@@ -128,6 +129,7 @@ export default function NonConformities({ currentUser }) {
                     <option value="">— None —</option>
                     {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
+                  <div style={{ fontSize: 11.5, color: '#1F6E72' }}>{projectFor(draft.plantId) || '—'}</div>
                   <select value={draft.status} onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))} style={smallInputStyle}>
                     {STATUS_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}
                   </select>
@@ -140,6 +142,7 @@ export default function NonConformities({ currentUser }) {
                 <>
                   <div>{r.desc}</div>
                   <div style={{ color: '#52685F' }}>{r.plant || '—'}</div>
+                  <div style={{ color: '#1F6E72', fontWeight: 600 }}>{projectFor(r.plantId) || '—'}</div>
                   <div><Chip label={r.status} tone={r.tone} /></div>
                   <div style={{ display: 'flex', gap: 10 }}>
                     {canWrite && <button type="button" onClick={() => startEdit(r)} style={linkBtnStyle}>Edit</button>}
@@ -161,8 +164,9 @@ export default function NonConformities({ currentUser }) {
             <div style={fieldLabelStyle}>Plant</div>
             <select value={form.plantId} onChange={(e) => setForm((f) => ({ ...f, plantId: e.target.value }))} style={inputStyle}>
               <option value="">— None —</option>
-              {plants.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {plants.map((p) => <option key={p.id} value={p.id}>{p.name}{p.projectName ? ` — ${p.projectName}` : ''}</option>)}
             </select>
+            {projectFor(form.plantId) && <div style={{ marginTop: -6, marginBottom: 12, fontSize: 11.5, color: '#1F6E72' }}>Project: {projectFor(form.plantId)}</div>}
             <div style={fieldLabelStyle}>Status</div>
             <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))} style={inputStyle}>
               {STATUS_ENTRIES.map(([k, m]) => <option key={k} value={k}>{m.label}</option>)}

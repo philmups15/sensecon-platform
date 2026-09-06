@@ -7,6 +7,7 @@ import Opportunities from './screens/Opportunities';
 import Projects from './screens/Projects';
 import WorkOrders from './screens/WorkOrders';
 import NonConformities from './screens/NonConformities';
+import Commissioning from './screens/Commissioning';
 import Reports from './screens/Reports';
 import Portal from './screens/Portal';
 import Admin from './screens/Admin';
@@ -15,6 +16,9 @@ import Login from './screens/Login';
 import ResetPassword from './screens/ResetPassword';
 import Profile from './screens/Profile';
 
+const CommissioningTests = (props) => <Commissioning {...props} view="tests" />;
+const HandoverScreen = (props) => <Commissioning {...props} view="handover" />;
+
 const SCREENS = {
   dashboard: Dashboard,
   profile: Profile,
@@ -22,6 +26,8 @@ const SCREENS = {
   projects: Projects,
   workorders: WorkOrders,
   nonconformities: NonConformities,
+  commissioning: CommissioningTests,
+  handover: HandoverScreen,
   reports: Reports,
   portal: Portal,
   admin: Admin,
