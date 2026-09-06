@@ -338,6 +338,11 @@ export const sendPasswordReset = (id) =>
 export const resetPassword = (token, newPassword) =>
   request('/api/auth/reset-password', { method: 'POST', auth: false, body: { token, newPassword } });
 
+// Public "forgot password" — always resolves (the API returns 204 whether or not
+// the email has an account), so the UI must not imply the address was found.
+export const forgotPassword = (email) =>
+  request('/api/auth/forgot-password', { method: 'POST', auth: false, body: { email } });
+
 // ---- Integrations ----
 export const getIntegrationSettings = () => request('/api/integrations');
 export const updateIntegrationSetting = (key, data) =>
